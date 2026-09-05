@@ -36,13 +36,38 @@ To be explicit, add `--curriculum tut` to any command.
 ## 0. Install the Python packages
 
 ```
-py -m pip install -r build\requirements.txt
+Requirement already satisfied: rdflib>=7.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from -r build\requirements.txt (line 3)) (7.6.0)
+Requirement already satisfied: pyshacl>=0.26 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from -r build\requirements.txt (line 4)) (0.40.1)
+Requirement already satisfied: fastapi>=0.110 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from -r build\requirements.txt (line 7)) (0.141.1)
+Requirement already satisfied: uvicorn>=0.27 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (0.52.4)
+Requirement already satisfied: pydantic>=2.6 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from -r build\requirements.txt (line 9)) (2.13.5)
+Requirement already satisfied: pyparsing<4,>=2.1.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from rdflib>=7.0->-r build\requirements.txt (line 3)) (3.3.2)
+Requirement already satisfied: owlrl<8,>=7.6.2 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyshacl>=0.26->-r build\requirements.txt (line 4)) (7.6.2)
+Requirement already satisfied: packaging>=21.3 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyshacl>=0.26->-r build\requirements.txt (line 4)) (26.3)
+Requirement already satisfied: prettytable>=3.7.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyshacl>=0.26->-r build\requirements.txt (line 4)) (3.18.0)
+Requirement already satisfied: html5rdf<2,>=1.2 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from rdflib[html]<8.0,>=7.3.0->pyshacl>=0.26->-r build\requirements.txt (line 4)) (1.2.1)
+Requirement already satisfied: starlette>=0.46.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from fastapi>=0.110->-r build\requirements.txt (line 7)) (1.6.0)
+Requirement already satisfied: typing-extensions>=4.8.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from fastapi>=0.110->-r build\requirements.txt (line 7)) (4.16.0)
+Requirement already satisfied: typing-inspection>=0.4.2 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from fastapi>=0.110->-r build\requirements.txt (line 7)) (0.4.4)
+Requirement already satisfied: annotated-doc>=0.0.2 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from fastapi>=0.110->-r build\requirements.txt (line 7)) (0.0.5)
+Requirement already satisfied: click>=7.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn>=0.27->uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (8.5.0)
+Requirement already satisfied: h11>=0.8 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn>=0.27->uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pydantic>=2.6->-r build\requirements.txt (line 9)) (0.8.0)
+Requirement already satisfied: pydantic-core==2.46.5 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pydantic>=2.6->-r build\requirements.txt (line 9)) (2.46.5)
+Requirement already satisfied: wcwidth>=0.3.5 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from prettytable>=3.7.0->pyshacl>=0.26->-r build\requirements.txt (line 4)) (0.8.3)
+Requirement already satisfied: anyio<5,>=3.6.2 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from starlette>=0.46.0->fastapi>=0.110->-r build\requirements.txt (line 7)) (4.15.1)
+Requirement already satisfied: idna>=2.8 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from anyio<5,>=3.6.2->starlette>=0.46.0->fastapi>=0.110->-r build\requirements.txt (line 7)) (3.19)
+Requirement already satisfied: httptools>=0.8.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (0.8.0)
+Requirement already satisfied: python-dotenv>=0.13 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (1.2.3)
+Requirement already satisfied: pyyaml>=5.1 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (6.0.3)
+Requirement already satisfied: watchfiles>=0.20 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (1.2.0)
+Requirement already satisfied: websockets>=13.0 in C:\Users\AubreyKhoza\AppData\Local\Programs\Python\Python313\Lib\site-packages (from uvicorn[standard]>=0.27->-r build\requirements.txt (line 8)) (17.1)
 ```
 
 Only `build/` needs these. The API has no dependencies at all.
 
 ```
-(paste the last few lines here, or note that it was already satisfied)
+already satisfied
 ```
 
 ---
@@ -56,7 +81,15 @@ matches the stated output.
 Expected to end with `All checks passed.`
 
 ```
-(paste the output here)
+Curriculum: tut
+Ontology read by rdflib: 82 criteria, 29 processes.
+
+42 activities, 6 learners.
+57 of 82 criteria addressed by at least one activity.
+Outcomes touched: A.1, A.2, B.2, D.1, D.2, D.3, E.1
+19 traced answers verified by execution, 0 hand-checked.
+
+All checks passed.
 ```
 
 ---
@@ -67,7 +100,84 @@ Where the reasoning happens. Writes `build\kb.db`, `build\d1-seed.sql`,
 `build\build_report.json` and `build\inferred.ttl`.
 
 ```
-(paste the whole output here — the table counts and the findings both matter)
+1. Loading the ontology
+-----------------------
+   model/eduntology.ttl parsed: 352 triples
+   curriculum 'tut' parsed: 942 further triples
+   content read: 42 activities, 6 learners
+
+2. Reading the vocabulary out of the graph
+------------------------------------------
+   2 modules, 7 outcomes, 82 criteria, 29 processes
+   5 dimensions, 21 game elements, 43 suitability entries
+
+3. Asserting learners, activities and contexts into the graph
+-------------------------------------------------------------
+   graph now holds 2346 triples (252 contexts asserted)
+
+4. Materialising rule R1
+------------------------
+   R1a derived 160 assertion(s)
+   R1b derived 99 assertion(s)
+   R1c derived 0 assertion(s)
+   wrote build\inferred.ttl (2605 triples)
+   252 of 252 platform contexts received a level
+   note: Rule R1 derived more than one level for 5 contexts. This happens where an activity addresses criteria requiring different taught processes and the learner has met some but not all of them. The highest level is taken, on the reading that an activity is no easier than its hardest unmet part.
+   ontology's own demonstration contexts: Context_A_WriteIf=Create, Context_B_WriteIf=Apply
+
+5. Proposing a design for every activity at every level reached
+---------------------------------------------------------------
+   levels reached by the corpus: Apply, Create
+   252 designs proposed: 42 activities at each of 6 levels
+   elements per design: 4
+
+6. Validating every design with pySHACL
+---------------------------------------
+   conforms: False
+   3 violation(s) reported
+   against the 252 proposed designs: 0
+   against the ontology's own test designs: 3
+      Design_ZengCombination  R5 violated: this design rewards completion on an activity of high AI vulnerability. Reward shou
+      Design_ZengCombination  R3 violated: this design draws on fewer than three of the five dimensions.
+      Design_ZengCombination  R3 violated: this design includes no Personal element. Toda et al. (2019) state that the absence
+
+   FINDING: In 148 of 252 contexts the effective level derived by R1 is not among the levels asserted on the activity's criteria. The platform selects elements on the effective level; the SHACL shape for R2 tests against the asserted level. The design proposal therefore excludes any element contraindicated at either, so both readings are satisfied.
+
+   FINDING: Rule R1 as formulated derives only Apply, Create or Remember, because it reasons from procedural familiarity alone. It therefore replaces the asserted level of criteria that are not procedural: Evaluate in 12 contexts, Remember in 24 contexts, Understand in 60 contexts. A criterion such as 'the difference between two loop kinds is explained' sits at Understand whatever the learner has been taught, and R1 has no way to say so. This is a limitation of R1 as stated in Section 4.4.4 and is a candidate for revision: the rule should apply where a criterion requires a process to be carried out, and leave other criteria alone.
+
+7. Writing the knowledge base
+-----------------------------
+   activity                42
+   activity_criterion      59
+   context                252
+   criterion               82
+   design                 252
+   design_element        1008
+   dimension                5
+   element                 21
+   element_level           43
+   learner                  6
+   learner_process         99
+   module                   2
+   outcome                  7
+   process                 29
+   traceability            15
+   validation               0
+   wrote build\kb.db
+
+8. Writing the Cloudflare D1 seed
+---------------------------------
+   1933 rows across 17 tables
+   wrote build\d1-seed.sql (441 KB)
+
+Done
+----
+   build\build_report.json
+
+   3 finding(s) recorded for Chapter 6:
+     - Rule R1 derived more than one level for 5 contexts. This happens where an activity addresses criteria requiring different taught processes and the lea
+     - In 148 of 252 contexts the effective level derived by R1 is not among the levels asserted on the activity's criteria. The platform selects elements on
+     - Rule R1 as formulated derives only Apply, Create or Remember, because it reasons from procedural familiarity alone. It therefore replaces the asserted
 ```
 
 Findings printed at the end:
@@ -85,7 +195,27 @@ evidence for Chapter 6. It needs Node as well as Python, because it calls the
 deployed rule code rather than a second copy of the rules.
 
 ```
-(paste the output here)
+Curriculum: tut
+
+1. Rule R1: the deployed JavaScript against the level the SPARQL rule derived
+-----------------------------------------------------------------------------
+   252 contexts compared
+   0 disagreement(s)
+
+2. Rules R2, R3 and R5: the deployed JavaScript against pySHACL
+---------------------------------------------------------------
+   asking the deployed rule code for 96 verdicts
+   asking pySHACL for the same 96 verdicts
+   96 candidate designs across 12 activities compared
+   0 disagreement(s)
+
+Verdict
+-------
+   The JavaScript that runs at the edge reaches the same verdict as
+   the reasoner and the SHACL engine on every case tested. On this
+   evidence, materialising the reasoning at design time and shipping
+   only lookups costs nothing in correctness.
+   wrote build\parity_report.json
 ```
 
 | | |
@@ -103,7 +233,38 @@ deployed rule code rather than a second copy of the rules.
 Thirty-three checks against the built knowledge base.
 
 ```
-(paste the last few lines here)
+1. Rule R1 against the level materialised at build time
+-------------------------------------------------------
+   252 contexts compared, 0 disagreement(s)
+
+2. Every stored design satisfies R2, R3 and R5
+----------------------------------------------
+   252 designs checked, 0 rejected
+
+3. The curriculum’s own test designs
+------------------------------------
+   levels, badges and leaderboards: conforms=false
+      R3 This design draws on 2 of the five dimensions. At least 3 are required.
+      R3 This design includes no Personal element. Elements concerning the individual learner. Their
+      R5 This activity's vulnerability to generative assistance is high, so reward may not attach to
+   a balanced design:              conforms=true
+   no elements at all:             conforms=false
+
+4. Marking
+----------
+   42 model answers accepted, 42 wrong answers rejected
+
+5. Routes
+---------
+   26 checks so far
+
+6. Submitting an attempt
+------------------------
+   ACT_A1_01 for L06: Apply -> Remember
+   reward basis ExplanationReward, 20 points
+   processes recorded: P10
+
+All 33 checks passed.
 ```
 
 ---
