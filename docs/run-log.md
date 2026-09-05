@@ -125,7 +125,9 @@ npm run dev
 Then <http://localhost:5173>.
 
 - [ ] the interface loads
-- [ ] the learner selector at the top right changes the levels in the list
+- [ ] the **learner selector** at the top right changes the levels in the list
+- [ ] the **Student / Lecturer** switch changes which views are offered
+- [ ] in Student view the ontology is nowhere on screen; in Lecturer view it is
 
 ---
 
@@ -152,6 +154,8 @@ then serve it through the Worker (`cd api && npx wrangler dev`), or keep using
 - [ ] the design console rejecting *Levels, badges and leaderboards*
 - [ ] the design console accepting the balanced design
 - [ ] the model page: the suitability matrix and the traceability table
+- [ ] the same activity in Student view and in Lecturer view, side by side
+- [ ] the curriculum view, showing the criteria and their flags
 
 ---
 

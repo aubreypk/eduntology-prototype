@@ -163,7 +163,32 @@ h3 { font-size: 1.1rem; font-weight: 700; margin: 1.4rem 0 0.5rem; }
 .split { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
 @media (min-width: 960px) { .split { grid-template-columns: 3fr 2fr; align-items: start; } }
 
-/* ------------------------------------------------------------ learner + XP */
+/* ------------------------------------------------------------ role, learner, XP */
+.roles {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.roles button {
+  min-height: 2.2rem;
+  padding: 0.35rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+}
+.roles button:hover { background: var(--raised); color: var(--ink); }
+.roles button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
 .learner-bar { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
 
 .xp {
@@ -205,6 +230,16 @@ select, input[type="text"], textarea {
   color: var(--ink);
 }
 select { cursor: pointer; }
+
+/* The popup list is drawn by the browser, not by this stylesheet. Styling the
+   select alone leaves the options inheriting near-white text on whatever
+   background the platform picks, which on Windows is light — the list opens
+   invisible and the control reads as broken. These two rules are the fix. */
+select option,
+select optgroup {
+  background: var(--surface);
+  color: var(--ink);
+}
 textarea {
   font-family: var(--mono);
   font-size: 0.95rem;

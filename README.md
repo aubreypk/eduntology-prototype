@@ -54,7 +54,7 @@ the rules for the running platform, and that script is how it is put on trial.
 | `curriculum/` | One folder per curriculum. `example/` is invented and committed; `tut/` is departmental material and is not. See `curriculum/README.md`. | — |
 | `build/` | Python. Reasons over the ontology, proposes a design for every activity at every level, validates with pySHACL, writes the knowledge base and the D1 seed. | your machine |
 | `api/` | JavaScript, **zero dependencies**. The rules as table lookups, deterministic marking, and one request handler that runs unchanged over `node:sqlite` locally and D1 at the edge. | Worker, or Node |
-| `web/` | React 18 and Vite. Activity list, activity workspace, design console, model reference. | browser |
+| `web/` | React 18 and Vite. Two roles: a student plays, a lecturer inspects. | browser |
 
 ## Running it
 
@@ -162,6 +162,24 @@ npx wrangler deploy
 ```
 
 One Worker serves the API from D1 and the built interface from Workers Assets.
+
+## Two roles
+
+The top bar switches point of view.
+
+**Student** sees one thing: their activities, grouped by learning outcome, with
+the level each one occupies *for them* and the game elements the model allows at
+that level. Nothing about the ontology is on screen.
+
+**Lecturer** sees what the model decided and why: the same activity list but as
+any chosen learner, the curriculum with every criterion and its classification,
+the design console, and the model's own suitability matrix and traceability
+table.
+
+**It is a view switch, not authentication.** There are no accounts, no
+passwords and no participants, and the learner selector stands in for a login.
+Chapter 5 says so rather than implying access control the prototype does not
+have.
 
 ## What to look at first
 

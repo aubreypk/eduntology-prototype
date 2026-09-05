@@ -8,7 +8,7 @@ const KIND_WORDS = {
   order: 'put in order'
 }
 
-export default function Activities ({ learner }) {
+export default function Activities ({ learner, role }) {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
   const [openOutcome, setOpenOutcome] = useState(null)
@@ -56,13 +56,20 @@ export default function Activities ({ learner }) {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Your activities</h2>
+      <h2 style={{ marginTop: 0 }}>
+        {role === 'lecturer' ? 'What this learner sees' : 'Your activities'}
+      </h2>
       <p className="lede">
-        The level on each activity is not a property of the activity. It is what
-        the model worked out for <em>you</em>, from the procedures the activity
-        needs and the procedures you have been taught. Change who you are playing
-        as, and the levels change with you — and so does the gamification each
-        activity is given.
+        {role === 'lecturer'
+          ? <>Every activity as this learner meets it. The level on each is
+            derived, not stored on the activity: rule R1 works it out from the
+            procedures the activity requires and the procedures this learner has
+            been taught. Change who you are viewing as and the levels move with
+            them, and so does the gamification each activity is given.</>
+          : <>The level on each activity is not a property of the activity. It is
+            what the model worked out for <em>you</em>, from the procedures the
+            activity needs and the procedures you have been taught. Do the work
+            and the levels change — and so does what each activity gives you.</>}
       </p>
 
       {groups.map(({ outcome, activities }) => {

@@ -7,7 +7,7 @@ const REWARD_WORDS = {
   ExplanationReward: 'explaining your answer'
 }
 
-export default function Activity ({ id, learner }) {
+export default function Activity ({ id, learner, role }) {
   const [data, setData] = useState(null)
   const [answer, setAnswer] = useState('')
   const [result, setResult] = useState(null)
@@ -173,7 +173,7 @@ export default function Activity ({ id, learner }) {
           </div>
 
           {/* --------------------------------------------- criteria */}
-          <details className="card">
+          <details className="card" open={role === 'lecturer'}>
             <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
               What this activity is for
             </summary>
@@ -229,7 +229,9 @@ export default function Activity ({ id, learner }) {
           {design && (
             <section className="card" aria-labelledby="design-heading">
               <h3 id="design-heading" style={{ marginTop: 0 }}>
-                What this activity gives you
+                {role === 'lecturer'
+                  ? 'What the model gave this learner'
+                  : 'What this activity gives you'}
               </h3>
               <p className="hint">
                 Not decoration. Each of these was selected because the model says
@@ -268,11 +270,13 @@ export default function Activity ({ id, learner }) {
                 </div>
               )}
 
-              <p style={{ marginTop: '1.1rem', marginBottom: 0 }}>
-                <a href={`#/console/${encodeURIComponent(data.id)}`}>
-                  Open this design in the console
-                </a>
-              </p>
+              {role === 'lecturer' && (
+                <p style={{ marginTop: '1.1rem', marginBottom: 0 }}>
+                  <a href={`#/console/${encodeURIComponent(data.id)}`}>
+                    Open this design in the console
+                  </a>
+                </p>
+              )}
             </section>
           )}
         </div>
