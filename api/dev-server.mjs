@@ -16,7 +16,7 @@
 
 import { createServer } from 'node:http'
 import { DatabaseSync } from 'node:sqlite'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -147,4 +147,27 @@ server.listen(PORT, () => {
   console.log(existsSync(DIST)
     ? `  interface  ${DIST}`
     : '  interface  NOT BUILT — run:  cd web && npm run build')
+
+  // web/dist is a build artefact and nothing rebuilds it on its own. Serving a
+  // stale one is quiet and expensive: the figures in a dissertation would show
+  // an interface that no longer exists.
+  const newest = (dir) => {
+    let latest = 0
+    const walk = (d) => {
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const full = resolve(d, entry.name)
+        if (entry.isDirectory()) walk(full)
+        else latest = Math.max(latest, statSync(full).mtimeMs)
+      }
+    }
+    try { walk(dir) } catch (ignored) { return 0 }
+    return latest
+  }
+
+  const SRC = resolve(HERE, '../web/src')
+  if (existsSync(DIST) && existsSync(SRC) && newest(SRC) > newest(DIST)) {
+    console.log('')
+    console.log('  !  web/src is newer than web/dist. You are serving a stale build.')
+    console.log('     cd web && npm run build')
+  }
 })

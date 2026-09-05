@@ -116,7 +116,11 @@ async function setLearner (page, id) {
 }
 
 async function openActivity (page, activityId) {
-  await page.goto(`${BASE}/#/activity/${encodeURIComponent(activityId)}`)
+  const url = `${BASE}/#/activity/${encodeURIComponent(activityId)}`
+  // Navigating to the URL already shown changes nothing and re-mounts nothing,
+  // so a figure taken afterwards is the previous figure again. Reload instead.
+  if (page.url() === url) await page.reload()
+  else await page.goto(url)
   await page.getByRole('heading', { level: 2 }).first().waitFor()
   await page.waitForTimeout(350)
 }
@@ -198,6 +202,27 @@ async function main () {
 
   await page.goto(BASE)
   await page.waitForSelector('#learner-select')
+
+  // Emulating prefers-color-scheme does nothing if the build being served
+  // predates the light palette, and the figures then come out dark while
+  // FIGURES.md claims light. Check the pixels rather than the intention.
+  const ground = await page.evaluate(() =>
+    getComputedStyle(document.body).backgroundColor)
+  // A transparent body says nothing about the theme, so do not judge one.
+  const opaque = !/rgba\([^)]*,\s*0(\.0+)?\)$/.test(ground.trim())
+  const rendered = /(\d+),\s*(\d+),\s*(\d+)/.exec(ground)
+  const bright = opaque && rendered
+    ? (Number(rendered[1]) + Number(rendered[2]) + Number(rendered[3])) / 3
+    : null
+  if (bright !== null && ((THEME === 'light' && bright < 128) ||
+                          (THEME === 'dark' && bright > 128))) {
+    await browser.close()
+    throw new Error(
+      `Asked for the ${THEME} theme, but the page rendered ${ground}.\n` +
+      'The interface being served is almost certainly a stale build. Run:\n' +
+      '    cd web && npm run build\n' +
+      'and start the server again.')
+  }
 
   // ---------------------------------------------------------------- student
   console.log('\nStudent view')
