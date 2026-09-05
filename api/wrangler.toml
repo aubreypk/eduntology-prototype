@@ -21,7 +21,7 @@
 #   npx wrangler d1 execute eduntology --remote --file=../build/d1-seed.sql
 #   npx wrangler deploy
 
-name = "eduntology"
+name = "eduntology-prototype"
 main = "src/worker.js"
 compatibility_date = "2025-09-01"
 
@@ -37,8 +37,8 @@ not_found_handling = "single-page-application"
 # deploy until you do.
 [[d1_databases]]
 binding = "DB"
-database_name = "eduntology"
-database_id = "PASTE-THE-ID-FROM-wrangler-d1-create-HERE"
+database_name = "eduntology-prototype"
+database_id = "dcbfe606-74c4-433b-988d-da2fc365d0bf"
 
 [observability]
 enabled = true
