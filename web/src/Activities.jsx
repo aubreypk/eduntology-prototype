@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { api } from './api.js'
 
+const LEVEL_ORDER = ['Remember', 'Understand', 'Apply', 'Analyse', 'Evaluate', 'Create']
+
 const KIND_WORDS = {
   trace: 'predict the output',
   mcq: 'choose one',
@@ -54,6 +56,13 @@ export default function Activities ({ learner, role }) {
     return [...seen.entries()]
   }
 
+  // The whole corpus is offered to every learner: the model changes what each
+  // activity *is* for them, not which ones they may open. Said out loud here,
+  // because a list of the same length after switching learner otherwise looks
+  // like nothing happened.
+  const spread = levelsOf(rows).sort(
+    (a, b) => LEVEL_ORDER.indexOf(a[0]) - LEVEL_ORDER.indexOf(b[0]))
+
   return (
     <>
       <h2 style={{ marginTop: 0 }}>
@@ -71,6 +80,21 @@ export default function Activities ({ learner, role }) {
             activity needs and the procedures you have been taught. Do the work
             and the levels change — and so does what each activity gives you.</>}
       </p>
+
+      <div className="card card--raised" aria-live="polite">
+        <p style={{ margin: 0 }}>
+          All <strong>{rows.length}</strong> activities are open to{' '}
+          {role === 'lecturer' ? 'this learner' : 'you'}. What the model changed is
+          the level each one sits at:{' '}
+          {spread.map(([level, n], i) => (
+            <React.Fragment key={level}>
+              {i > 0 && (i === spread.length - 1 ? ' and ' : ', ')}
+              <span className={`chip chip--${level}`}>{n} at {level}</span>
+            </React.Fragment>
+          ))}
+          .
+        </p>
+      </div>
 
       {groups.map(({ outcome, activities }) => {
         const solved = activities.filter((a) => a.solved).length
