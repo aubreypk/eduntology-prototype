@@ -131,31 +131,40 @@ Then <http://localhost:5173>.
 
 ---
 
-## 6. Screenshots for Chapter 5
+## 6. Figures for Chapter 5
 
-Take these from the **built** interface, not the development server — the dev
-server injects tooling that would not be present in use, and the same build is
-what the accessibility and performance audits in Chapter 6 will run against.
+Do not take these by hand. `docs/screenshots.mjs` drives the real interface
+through the real API and writes numbered PNGs with captions, so a figure can be
+regenerated after any change rather than re-staged.
+
+Rebuild the knowledge base first — the script submits a correct answer, and a
+second run would otherwise start from a solved activity.
 
 ```
+py build\build_kb.py --curriculum tut
 cd web
+npm install -D playwright
+npx playwright install chromium
 npm run build
+cd ..
+node api\dev-server.mjs
 ```
 
-then serve it through the Worker (`cd api && npx wrangler dev`), or keep using
-`node api\dev-server.mjs` with `npm run preview` in `web`.
+then, in a second window:
 
-- [ ] activity list as the first-week learner, nearly everything at Create
-- [ ] activity list as the learner who has finished the module, mostly Apply
-- [ ] the selection-writing activity as the first learner — the *Why this level* panel reading Create
-- [ ] the same activity as the second — the same panel reading Apply
-- [ ] the two gamification panels side by side, showing the different elements
-- [ ] a correct attempt moving the activity to Remember, with the elements changing
-- [ ] the design console rejecting *Levels, badges and leaderboards*
-- [ ] the design console accepting the balanced design
-- [ ] the model page: the suitability matrix and the traceability table
-- [ ] the same activity in Student view and in Lecturer view, side by side
-- [ ] the curriculum view, showing the criteria and their flags
+```
+node docs\screenshots.mjs --base http://127.0.0.1:8000
+```
+
+- [ ] `docs\screenshots\` holds the PNGs and `FIGURES.md`
+- [ ] the two list figures show the same activities at different levels
+- [ ] the two activity figures show different game elements for the same task
+
+Rebuild the knowledge base afterwards, so Chapter 6 measures a clean database:
+
+```
+py build\build_kb.py --curriculum tut
+```
 
 ---
 

@@ -138,6 +138,36 @@ against R2, R3 and R5, the two test designs judged as the model predicts, every
 model answer accepted and every wrong one rejected, every route answering, and
 a full attempt moving an activity to Remember by rule R1c.
 
+## Figures for the write-up
+
+```
+npm install -D playwright
+npx playwright install chromium
+node docs\screenshots.mjs --base http://127.0.0.1:8000
+```
+
+Drives the real interface through the real API and writes numbered PNGs to
+`docs\screenshots\`, with a `FIGURES.md` of captions. Taking them by hand
+means a chapter whose figures were captured on different days at different
+window sizes with different data behind them; this way a figure is regenerated
+rather than re-staged.
+
+Rebuild the knowledge base first. The script submits a correct answer, which is
+recorded, so a second run would begin from a solved activity and the "before"
+figures would be wrong.
+
+## Continuous checking
+
+`.github/workflows/ci.yml` runs on every push. It reasons over the ontology with
+rdflib and pySHACL, then puts the JavaScript that deploys on trial against
+pySHACL and **fails the build on any disagreement**. Every push therefore
+carries a fresh answer to the question Section 4.6 raises, and `build_report.json`
+and `parity_report.json` are kept as artefacts so a claim in the dissertation can
+be traced to the run that produced it.
+
+It runs against `curriculum/example`, because the Tshwane material is not in
+this repository and CI has no access to it.
+
 ## Deploying to Cloudflare
 
 ```
@@ -162,6 +192,25 @@ npx wrangler deploy
 ```
 
 One Worker serves the API from D1 and the built interface from Workers Assets.
+
+### Deploying from GitHub instead
+
+Add two repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Where to find it |
+|---|---|
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard, right-hand column of the Workers & Pages overview |
+| `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template, then add **Account → D1 → Edit** to it |
+
+Paste the `database_id` from `wrangler d1 create` into `api\wrangler.toml` and
+commit it. It is an identifier, not a credential, and is useless without the
+token.
+
+Pushes to `main` then deploy automatically. **Seeding is deliberate rather than
+automatic**: it drops and recreates every table, so an unasked-for seed on each
+push would wipe whatever the deployed instance had accumulated. For the first
+deployment, and after any change to the model or the curriculum, run the
+workflow by hand from the Actions tab with **seed** ticked.
 
 ## Two roles
 
