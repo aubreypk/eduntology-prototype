@@ -162,7 +162,13 @@ not a reproducible statement. Force one with `--browser msedge`, `--browser
 chrome` or `--browser chromium`.
 
 Drives the real interface through the real API and writes numbered PNGs to
-`docs\screenshots\`, with a `FIGURES.md` of captions. Taking them by hand
+`docs\screenshots\`, with a `FIGURES.md` recording the browser, the viewport
+and the theme each was taken in.
+
+Figures are taken in the **light** palette by default, because a dark
+screenshot at half a page is a solid block of ink and somebody will read this
+on paper. `--theme dark` takes them in the authored palette instead. Pin the
+activity the text discusses with `--activity ACT_D2_01`. Taking them by hand
 means a chapter whose figures were captured on different days at different
 window sizes with different data behind them; this way a figure is regenerated
 rather than re-staged.
@@ -170,6 +176,19 @@ rather than re-staged.
 Rebuild the knowledge base first. The script submits a correct answer, which is
 recorded, so a second run would begin from a solved activity and the "before"
 figures would be wrong.
+
+## Light and dark
+
+The interface follows the reader's system preference. Dark is the authored
+design; the light palette is derived from the same tokens rather than
+approximated, and both are checked the same way — **all 142 foreground and
+background pairs across the two palettes meet WCAG 2.1 AA** against the surface
+each actually sits on. The tightest are the control border at 3.43:1 in dark
+and 4.39:1 in light, against a 3:1 requirement for non-text contrast.
+
+There is no theme switch in the interface. Honouring `prefers-color-scheme` is
+the accessible behaviour and needs no control; adding one would be a preference
+the platform stores about a person for no reason.
 
 ## Continuous checking
 

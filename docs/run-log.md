@@ -317,6 +317,10 @@ then, in a second window:
 npm run figures -- --base http://127.0.0.1:8000 --activity ACT_D2_01
 ```
 
+Figures come out in the light palette, which is what prints. Add
+`--theme dark` for the authored palette if a figure is about the look rather
+than the content.
+
 `--activity` pins the figure to the criterion Chapter 4 discusses by name.
 Without it the script takes the first code-completion activity resting on a
 Thompson-flagged criterion — a fair demonstration, but not the one the text

@@ -65,6 +65,9 @@ jobs:
       - name: Does the deployed JavaScript agree with pySHACL?
         run: python build/verify_parity.py --curriculum example
 
+      - name: Check both palettes against WCAG 2.1 AA
+        run: python docs/check_contrast.py
+
       - name: Build the interface
         working-directory: web
         run: |
