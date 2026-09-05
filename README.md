@@ -229,24 +229,66 @@ One Worker serves the API from D1 and the built interface from Workers Assets.
 
 ### Deploying from GitHub instead
 
-Add two repository secrets under **Settings → Secrets and variables → Actions**:
+The two Cloudflare values go in **GitHub repository secrets**. Not `.env`, not
+`wrangler.toml`, not the Cloudflare dashboard.
 
-| Secret | Where to find it |
+**1. Add the secrets.** Open
+<https://github.com/aubreypk/eduntology-prototype/settings/secrets/actions>
+and press **New repository secret**, twice:
+
+| Name — must match exactly | Value |
 |---|---|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard, right-hand column of the Workers & Pages overview |
-| `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template, then add **Account → D1 → Edit** to it |
+| `CLOUDFLARE_ACCOUNT_ID` | the Account ID from the Cloudflare dashboard, Workers & Pages overview, right-hand column |
+| `CLOUDFLARE_API_TOKEN` | the token from the next step |
 
-Paste the `database_id` from `wrangler d1 create` into `api\wrangler.toml` and
-commit it. The `database_name` there is the single source of that name — the
-workflow reads it out of the file rather than repeating it, because a literal
-in two places seeds nothing the day they disagree. It is an identifier, not a credential, and is useless without the
-token.
+A misspelled name makes the deploy step *skip with a notice* rather than fail,
+so if nothing deploys, check the spelling first.
 
-Pushes to `main` then deploy automatically. **Seeding is deliberate rather than
-automatic**: it drops and recreates every table, so an unasked-for seed on each
-push would wipe whatever the deployed instance had accumulated. For the first
-deployment, and after any change to the model or the curriculum, run the
-workflow by hand from the Actions tab with **seed** ticked.
+**2. Give the token the right permissions.** Two, both on **Account**:
+
+- **Workers Scripts → Edit**
+- **D1 → Edit**
+
+The *Edit Cloudflare Workers* template gives you the first and **not** the
+second. Add D1 to it at <https://dash.cloudflare.com/profile/api-tokens>.
+
+Without D1, seeding fails with a bare `Authentication error [code: 10000]` —
+and wrangler then prints your **account** role, "Super Administrator, All
+Privileges", which sends you looking in entirely the wrong place. A token
+carries its own permissions, narrower than your account's; being an account
+super admin grants a token nothing. The workflow checks for D1 access before it
+tries, so it tells you this rather than leaving you with the error code.
+
+**3. First deployment.** **Actions** tab → **check and deploy** → **Run
+workflow** → tick **seed** → **Run workflow**.
+
+Seeding is deliberate because it drops and recreates every table: doing it
+unasked on every push would wipe whatever the deployed instance had
+accumulated. Tick it for the first deployment and after any change to the model
+or the curriculum; leave it alone otherwise.
+
+**4. After that**, every push to `main` runs the checks and redeploys. The run
+summary gives the URL.
+
+The deployed instance runs `curriculum/example`, because the Tshwane material
+is not in this repository and CI cannot see it.
+
+### Deploying from your own machine instead
+
+No token, and no permissions to configure — this authorises in the browser with
+your full account rights:
+
+```
+cd api
+npx wrangler login
+npx wrangler d1 execute eduntology-prototype --remote --file=..\build\d1-seed.sql
+npx wrangler deploy
+```
+
+That deploys whichever curriculum your last `build_kb.py` used, so it is the
+way to put the real thing somewhere Dr van Wyk can open it — CI can only ever
+deploy the example. Build the interface first (`cd web && npm run build`) or
+the Worker serves the API alone.
 
 ## Two roles
 

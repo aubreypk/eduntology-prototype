@@ -138,6 +138,55 @@ jobs:
       # the deployed instance had accumulated. Run the workflow by hand with
       # "seed" ticked for the first deployment and after any change to the
       # model or the curriculum.
+      # Ask the token what it can do before using it. Cloudflare answers a
+      # token that lacks D1 with a bare "Authentication error [code: 10000]",
+      # and wrangler then helpfully prints the ACCOUNT role -- "Super
+      # Administrator - All Privileges" -- which sends you looking in exactly
+      # the wrong place. The account role is not the token's scopes.
+      - name: Can this token reach D1?
+        id: d1check
+        if: steps.creds.outputs.ready == 'true' && inputs.seed
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          DB_NAME=$(grep -m1 '^database_name' wrangler.toml | cut -d'"' -f2)
+          DB_ID=$(grep -m1 '^database_id' wrangler.toml | cut -d'"' -f2)
+          if [ -z "$DB_NAME" ] || [ "${DB_ID#PASTE}" != "$DB_ID" ]; then
+            echo "::error::api/wrangler.toml still holds the placeholder database_id. Run: npx wrangler d1 create <name>"
+            exit 1
+          fi
+          echo "db_name=$DB_NAME" >> "$GITHUB_OUTPUT"
+
+          if ! npx --yes wrangler@4 d1 info "$DB_NAME" > d1check.log 2>&1; then
+            cat d1check.log
+            {
+              echo "### The API token cannot reach D1"
+              echo ""
+              echo "Seeding needs **Account → D1 → Edit** on the token itself."
+              echo "Your account role is irrelevant here — a token carries its own,"
+              echo "narrower permissions, and the *Edit Cloudflare Workers* template"
+              echo "does **not** include D1."
+              echo ""
+              echo "Fix it at <https://dash.cloudflare.com/profile/api-tokens>:"
+              echo "edit the token, add **Account → D1 → Edit**, save, and update the"
+              echo "\`CLOUDFLARE_API_TOKEN\` secret if the value changed."
+              echo ""
+              echo "Or skip the token entirely and seed from your own machine, where"
+              echo "\`npx wrangler login\` authorises with your full account rights:"
+              echo ""
+              echo '```'
+              echo "cd api"
+              echo "npx wrangler login"
+              echo "npx wrangler d1 execute $DB_NAME --remote --file=../build/d1-seed.sql"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::The API token lacks D1 access. See the run summary for how to fix it."
+            exit 1
+          fi
+          echo "D1 reachable."
+
       - name: Seed the remote database
         if: steps.creds.outputs.ready == 'true' && inputs.seed
         working-directory: api
@@ -145,16 +194,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          # Read the database name from wrangler.toml rather than repeating it.
-          # A literal here silently seeds nothing the day the name changes.
-          DB_NAME=$(grep -m1 '^database_name' wrangler.toml | cut -d'"' -f2)
-          DB_ID=$(grep -m1 '^database_id' wrangler.toml | cut -d'"' -f2)
-          if [ -z "$DB_NAME" ] || [ "${DB_ID#PASTE}" != "$DB_ID" ]; then
-            echo "::error::api/wrangler.toml still holds the placeholder database_id. Run: npx wrangler d1 create <name>"
-            exit 1
-          fi
-          echo "Seeding $DB_NAME"
-          npx --yes wrangler@3 d1 execute "$DB_NAME" --remote --yes --file=../build/d1-seed.sql
+          echo "Seeding ${{ steps.d1check.outputs.db_name }}"
+          npx --yes wrangler@4 d1 execute "${{ steps.d1check.outputs.db_name }}" \
+            --remote --yes --file=../build/d1-seed.sql
 
       - name: Deploy the Worker
         if: steps.creds.outputs.ready == 'true'
@@ -162,4 +204,4 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@3 deploy
+        run: npx --yes wrangler@4 deploy
