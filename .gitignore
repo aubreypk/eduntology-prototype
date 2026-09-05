@@ -43,6 +43,10 @@ npm-debug.log*
 # Evaluation output, kept out until Chapter 6 decides what is reported
 evaluation/output/
 
+# Patches exchanged while working. They are a transport, not part of the
+# project, and committing them puts every change in the repository twice.
+*.patch
+
 # Editors and operating systems
 .vscode/
 .idea/

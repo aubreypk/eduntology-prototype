@@ -220,11 +220,11 @@ Verdict
 
 | | |
 |---|---|
-| Contexts compared | |
-| R1 disagreements | |
-| Candidate designs compared | |
-| R2/R3/R5 disagreements | |
-| Parity | pass / fail |
+| Contexts compared | 252 |
+| R1 disagreements | 0 |
+| Candidate designs compared | 96, across 12 activities |
+| R2/R3/R5 disagreements | 0 |
+| Parity | **pass** |
 
 ---
 

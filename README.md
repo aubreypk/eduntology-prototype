@@ -141,10 +141,19 @@ a full attempt moving an activity to Remember by rule R1c.
 ## Figures for the write-up
 
 ```
+cd web
 npm install -D playwright
-npx playwright install chromium
+cd ..
 node docs\screenshots.mjs --base http://127.0.0.1:8000
 ```
+
+There is no browser to download. `npx playwright install chromium` fetches one
+from `cdn.playwright.dev`, which many university networks block; the script
+skips that entirely and drives the Chromium-based browser already on the
+machine — on Windows that is Edge, which is always present. It reports which
+browser it used and records it in `FIGURES.md`, because "a Chromium browser" is
+not a reproducible statement. Force one with `--browser msedge`, `--browser
+chrome` or `--browser chromium`.
 
 Drives the real interface through the real API and writes numbered PNGs to
 `docs\screenshots\`, with a `FIGURES.md` of captions. Taking them by hand
