@@ -1,0 +1,231 @@
+@prefix gpo:  <http://www.tut.ac.za/ontologies/gpo#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+#################################################################
+#  EXAMPLE CURRICULUM
+#
+#  Invented for this repository. PROG101 is not a real module and
+#  no institution teaches it. It exists so that the model can be
+#  built, run and inspected by anyone who clones this repository,
+#  without publishing any institution's course material.
+#
+#  It is deliberately small: one module, three outcomes, thirteen
+#  assessment criteria, eight taught processes. That is enough to
+#  exercise every rule, including the case rule R1 exists for.
+#
+#  To point the build at a different curriculum, see
+#  curriculum/README.md.
+#################################################################
+
+<http://www.tut.ac.za/ontologies/gpo/curriculum/example> a owl:Ontology ;
+    dct:title "Example curriculum: Introduction to Programming (PROG101)" ;
+    dct:description "An invented curriculum, supplied so that the model can be run without an institution's own material." .
+
+
+#################################################################
+#  TAUGHT PROCESSES
+#  A process is a procedure the module explicitly teaches. Rule R1
+#  turns on whether a learner has met the process a criterion
+#  requires, so this list is what makes the rule able to say
+#  anything at all.
+#################################################################
+
+gpo:P_X01 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X01 Arithmetic operator use" .
+
+gpo:P_X02 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X02 Relational comparison" .
+
+gpo:P_X03 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X03 Selection construction" .
+
+gpo:P_X04 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X04 Nested selection" .
+
+gpo:P_X05 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X05 Condition-controlled loop" .
+
+gpo:P_X06 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X06 Counted loop" .
+
+gpo:P_X07 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X07 Accumulation" .
+
+gpo:P_X08 a owl:NamedIndividual , gpo:Process ;
+    rdfs:label "X08 Flowchart representation" .
+
+
+#################################################################
+#  MODULE AND OUTCOMES
+#################################################################
+
+gpo:PROG101 a owl:NamedIndividual , gpo:Module ;
+    rdfs:label "Introduction to Programming (PROG101)" ;
+    gpo:hasOutcome gpo:LO_PROG101_A_1 , gpo:LO_PROG101_B_1 , gpo:LO_PROG101_C_1 ;
+    gpo:teachesProcess gpo:P_X01 , gpo:P_X02 , gpo:P_X03 , gpo:P_X04 ,
+                       gpo:P_X05 , gpo:P_X06 , gpo:P_X07 , gpo:P_X08 .
+
+gpo:LO_PROG101_A_1 a owl:NamedIndividual , gpo:LearningOutcome ;
+    rdfs:label "A.1 Working with values and operators" ;
+    gpo:hasCriterion gpo:AC_PROG101_A_1_1 , gpo:AC_PROG101_A_1_2 ,
+                     gpo:AC_PROG101_A_1_3 , gpo:AC_PROG101_A_1_4 .
+
+gpo:LO_PROG101_B_1 a owl:NamedIndividual , gpo:LearningOutcome ;
+    rdfs:label "B.1 Making decisions" ;
+    gpo:hasCriterion gpo:AC_PROG101_B_1_1 , gpo:AC_PROG101_B_1_2 ,
+                     gpo:AC_PROG101_B_1_3 , gpo:AC_PROG101_B_1_4 ,
+                     gpo:AC_PROG101_B_1_5 .
+
+gpo:LO_PROG101_C_1 a owl:NamedIndividual , gpo:LearningOutcome ;
+    rdfs:label "C.1 Repeating work" ;
+    gpo:hasCriterion gpo:AC_PROG101_C_1_1 , gpo:AC_PROG101_C_1_2 ,
+                     gpo:AC_PROG101_C_1_3 , gpo:AC_PROG101_C_1_4 .
+
+
+#################################################################
+#  ASSESSMENT CRITERIA
+#
+#  atCognitiveLevel is the level the criterion's own wording
+#  implies, assuming the required procedure has been taught.
+#  Rule R1 may derive a different level for a particular learner;
+#  that is the whole point of the rule.
+#################################################################
+
+gpo:AC_PROG101_A_1_1 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "A.1.1" ;
+    gpo:criterionCode "A.1.1" ;
+    gpo:criterionText "The arithmetic operators available in the language are listed." ;
+    gpo:atCognitiveLevel gpo:Remember ;
+    gpo:requiresProcess gpo:P_X01 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_A_1_2 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "A.1.2" ;
+    gpo:criterionCode "A.1.2" ;
+    gpo:criterionText "The difference between integer division and real division is explained." ;
+    gpo:atCognitiveLevel gpo:Understand ;
+    gpo:requiresProcess gpo:P_X01 ;
+    gpo:levelFlag "" ;
+    rdfs:comment "A non-procedural criterion. It sits at Understand whatever the learner has been taught, which rule R1 as presently formulated cannot express. Kept here deliberately, so that the limitation is visible in the example." .
+
+gpo:AC_PROG101_A_1_3 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "A.1.3" ;
+    gpo:criterionCode "A.1.3" ;
+    gpo:criterionText "A calculation is performed by combining at least two arithmetic operators in a single expression." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X01 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_A_1_4 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "A.1.4" ;
+    gpo:criterionCode "A.1.4" ;
+    gpo:criterionText "Two values are compared by writing a relational expression that yields a Boolean result." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X02 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_B_1_1 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.1" ;
+    gpo:criterionCode "B.1.1" ;
+    gpo:criterionText "A program is made to choose between two paths by writing a selection control structure." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X03 ;
+    gpo:levelFlag "Thompson" ;
+    rdfs:comment "The case rule R1 exists for. The criterion asks for something to be written; whether that is Apply or Create depends entirely on whether the learner has been taught the construction. Compare learners E2 and E4." .
+
+gpo:AC_PROG101_B_1_2 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.2" ;
+    gpo:criterionCode "B.1.2" ;
+    gpo:criterionText "The effect of a selection control structure on the order in which statements execute is explained." ;
+    gpo:atCognitiveLevel gpo:Understand ;
+    gpo:requiresProcess gpo:P_X03 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_B_1_3 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.3" ;
+    gpo:criterionCode "B.1.3" ;
+    gpo:criterionText "A decision that depends on the outcome of a prior decision is written by nesting one selection structure inside another." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X04 ;
+    gpo:levelFlag "Thompson" .
+
+gpo:AC_PROG101_B_1_4 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.4" ;
+    gpo:criterionCode "B.1.4" ;
+    gpo:criterionText "Two candidate selection structures meeting the same requirement are judged, and the choice between them is justified." ;
+    gpo:atCognitiveLevel gpo:Evaluate ;
+    gpo:requiresProcess gpo:P_X04 ;
+    gpo:levelFlag "Thompson" .
+
+gpo:AC_PROG101_B_1_5 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.5" ;
+    gpo:criterionCode "B.1.5" ;
+    gpo:criterionText "The flowchart symbol used to represent a decision is named." ;
+    gpo:atCognitiveLevel gpo:Remember ;
+    gpo:requiresProcess gpo:P_X08 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_C_1_1 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "C.1.1" ;
+    gpo:criterionCode "C.1.1" ;
+    gpo:criterionText "The difference between a loop whose repetitions are counted and one that ends on a sentinel value is explained." ;
+    gpo:atCognitiveLevel gpo:Understand ;
+    gpo:requiresProcess gpo:P_X05 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_C_1_2 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "C.1.2" ;
+    gpo:criterionCode "C.1.2" ;
+    gpo:criterionText "A block of statements is repeated an unknown number of times by writing a condition-controlled loop." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X05 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_C_1_3 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "C.1.3" ;
+    gpo:criterionCode "C.1.3" ;
+    gpo:criterionText "A block of statements is repeated a known number of times by writing a counted loop." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X06 ;
+    gpo:levelFlag "" .
+
+gpo:AC_PROG101_C_1_4 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "C.1.4" ;
+    gpo:criterionCode "C.1.4" ;
+    gpo:criterionText "A running total is accumulated across the repetitions of a loop and reported once the loop has ended." ;
+    gpo:atCognitiveLevel gpo:Apply ;
+    gpo:requiresProcess gpo:P_X07 ;
+    gpo:levelFlag "Split" .
+
+
+#################################################################
+#  TEST DESIGNS
+#
+#  Two designs the rules should judge differently. They are part
+#  of the curriculum rather than the model because a design has to
+#  gamify some activity, and activities belong to a curriculum.
+#  gpo:Act_EX_B1_01 is asserted into the graph by the build from
+#  activities.json.
+#################################################################
+
+# Levels, badges and leaderboards: the combination Zeng et al. (2024)
+# found to depress attainment. Three Measurement elements plus one
+# Social, with nothing Personal and nothing Fictional. Rule R3 should
+# reject it, and for a reason stated in advance by Toda et al. rather
+# than fitted to Zeng's result.
+gpo:Design_ZengCombination a owl:NamedIndividual , gpo:GamifiedActivityDesign ;
+    rdfs:label "Levels, badges and leaderboards (Zeng et al., 2024 negative case)" ;
+    gpo:gamifies gpo:Act_EX_B1_01 ;
+    gpo:appliesElement gpo:Level , gpo:Acknowledgement , gpo:Competition ;
+    gpo:hasRewardBasis gpo:CompletionReward .
+
+# A design intended to satisfy every rule.
+gpo:Design_Balanced a owl:NamedIndividual , gpo:GamifiedActivityDesign ;
+    rdfs:label "Balanced design for an Apply-level activity" ;
+    gpo:gamifies gpo:Act_EX_B1_01 ;
+    gpo:appliesElement gpo:Point , gpo:Progression , gpo:Objective , gpo:Puzzle , gpo:Narrative ;
+    gpo:hasRewardBasis gpo:ExplanationReward .

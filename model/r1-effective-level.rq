@@ -1,0 +1,65 @@
+# ============================================================
+#  Rule R1 - effective cognitive level
+#
+#  Formalises Thompson et al. (2008). The level an activity
+#  occupies is not a property of the activity: it is a relation
+#  between the activity and what the learner has already been
+#  taught.
+#
+#  These are SPARQL CONSTRUCT queries rather than SWRL rules
+#  because the Create case turns on the learner NOT having
+#  encountered the process. SWRL is monotonic and has no
+#  negation; SPARQL has NOT EXISTS. Run them in order and add
+#  the results to the graph before running the SHACL shapes.
+#
+#  Usage (Python, with rdflib):
+#      g.parse("gpo.ttl", format="turtle")
+#      for qry in queries:  g += g.query(qry).graph
+#      g.serialize("gpo-inferred.ttl", format="turtle")
+# ============================================================
+
+PREFIX gpo: <http://www.tut.ac.za/ontologies/gpo#>
+
+# ------------------------------------------------------------
+#  R1a  APPLY
+#  Thompson et al.: the process and algorithm are known to the
+#  learner, and both are applied either to a familiar problem
+#  not previously solved in the same context, or to an
+#  unfamiliar problem.
+# ------------------------------------------------------------
+CONSTRUCT { ?ctx gpo:hasEffectiveLevel gpo:Apply }
+WHERE {
+    ?ctx  gpo:forLearner  ?learner ;
+          gpo:forActivity ?activity .
+    ?activity  gpo:addressesCriterion ?criterion .
+    ?criterion gpo:requiresProcess ?process .
+    ?learner   gpo:hasEncountered ?process .
+    FILTER NOT EXISTS { ?learner gpo:hasCompletedIdentical ?activity }
+}
+
+# ------------------------------------------------------------
+#  R1b  CREATE
+#  Thompson et al.: the learner has no familiarity with the
+#  completed functional whole. This is the case SWRL cannot
+#  express.
+# ------------------------------------------------------------
+CONSTRUCT { ?ctx gpo:hasEffectiveLevel gpo:Create }
+WHERE {
+    ?ctx  gpo:forLearner  ?learner ;
+          gpo:forActivity ?activity .
+    ?activity  gpo:addressesCriterion ?criterion .
+    ?criterion gpo:requiresProcess ?process .
+    FILTER NOT EXISTS { ?learner gpo:hasEncountered ?process }
+}
+
+# ------------------------------------------------------------
+#  R1c  REMEMBER
+#  Thompson et al.: the learner has already seen the exact
+#  problem, solution, process and language.
+# ------------------------------------------------------------
+CONSTRUCT { ?ctx gpo:hasEffectiveLevel gpo:Remember }
+WHERE {
+    ?ctx  gpo:forLearner  ?learner ;
+          gpo:forActivity ?activity .
+    ?learner gpo:hasCompletedIdentical ?activity .
+}

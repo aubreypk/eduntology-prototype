@@ -1,0 +1,413 @@
+@prefix gpo:  <http://www.tut.ac.za/ontologies/gpo#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+<http://www.tut.ac.za/ontologies/gpo> a owl:Ontology ;
+    dct:title "Gamified Programming Ontology (GPO)" ;
+    dct:description "An ontology aligning game elements with programming learning outcomes expressed at defined cognitive levels. This file is the model alone: the classes, the properties, the six cognitive process categories of the revised Bloom taxonomy after Anderson et al. (2001), the twenty-one game elements and five dimensions of Toda et al. (2019), and the reward bases. It states no curriculum. A curriculum supplies the modules, taught processes, learning outcomes and assessment criteria as a separate graph, and the model is intended to take more than one." ;
+    dct:creator "Aubrey Pule Khoza (204101639)" ;
+    owl:versionInfo "0.4 - model separated from curriculum; consistent under HermiT; rules executed with rdflib and pySHACL" .
+
+# ---------------------------------------------------------------------------
+#  What a curriculum graph must supply for the rules to work
+#
+#    gpo:Module            with gpo:hasOutcome and gpo:teachesProcess
+#    gpo:Process           one per procedure a module explicitly teaches
+#    gpo:LearningOutcome   with gpo:hasCriterion
+#    gpo:AssessmentCriterion
+#                          with gpo:criterionCode, gpo:criterionText,
+#                          gpo:atCognitiveLevel and, where the criterion asks
+#                          for a procedure to be carried out,
+#                          gpo:requiresProcess
+#
+#  Rule R1 turns on gpo:requiresProcess and gpo:hasEncountered. A curriculum
+#  that omits requiresProcess still loads, but R1 has nothing to reason from
+#  and every activity falls back to the level its criterion asserts.
+#
+#  See curriculum/README.md, and curriculum/example for a working one.
+# ---------------------------------------------------------------------------
+
+#################################################################
+#  MODEL VOCABULARY
+#  Nothing below is specific to any curriculum.
+#################################################################
+
+#################################################################
+#  CLASSES
+#################################################################
+
+gpo:Module a owl:Class ;
+    rdfs:label "Module" ;
+    rdfs:comment "A subject module in a qualification." .
+
+gpo:LearningOutcome a owl:Class ;
+    rdfs:label "LearningOutcome" ;
+    rdfs:comment "A learning outcome as stated in a module study guide." .
+
+gpo:AssessmentCriterion a owl:Class ;
+    rdfs:label "AssessmentCriterion" ;
+    rdfs:comment "An assessment criterion under a learning outcome, stated as noun + verb + measurable standard." .
+
+gpo:CognitiveLevel a owl:Class ;
+    rdfs:label "CognitiveLevel" ;
+    rdfs:comment "A category of the cognitive process dimension of the revised Bloom taxonomy (Anderson et al., 2001)." .
+
+gpo:Process a owl:Class ;
+    rdfs:label "Process" ;
+    rdfs:comment "A procedure a module may explicitly teach, for example writing an if-statement." .
+
+gpo:LearningActivity a owl:Class ;
+    rdfs:label "LearningActivity" ;
+    rdfs:comment "A task a learner performs, addressing one or more assessment criteria." .
+
+gpo:Learner a owl:Class ;
+    rdfs:label "Learner" ;
+    rdfs:comment "An individual learner." .
+
+gpo:GameElement a owl:Class ;
+    rdfs:label "GameElement" ;
+    rdfs:comment "A game element from the taxonomy of Toda et al. (2019)." .
+
+gpo:Dimension a owl:Class ;
+    rdfs:label "Dimension" ;
+    rdfs:comment "One of the five dimensions into which Toda et al. (2019) group the game elements." .
+
+gpo:GamifiedActivityDesign a owl:Class ;
+    rdfs:label "GamifiedActivityDesign" ;
+    rdfs:comment "A learning activity together with the game elements applied to it." .
+
+gpo:RewardBasis a owl:Class ;
+    rdfs:label "RewardBasis" ;
+    rdfs:comment "What a gamified design attaches its reward to." .
+
+gpo:LearnerActivityContext a owl:Class ;
+    rdfs:label "LearnerActivityContext" ;
+    rdfs:comment "Reification of the ternary relation between a learner, an activity and the cognitive level that activity occupies for that learner. Required because OWL properties are binary." .
+
+gpo:CognitiveLevel owl:disjointWith gpo:GameElement , gpo:Dimension , gpo:Process .
+
+
+#################################################################
+#  OBJECT PROPERTIES
+#################################################################
+
+gpo:hasOutcome a owl:ObjectProperty ;
+    rdfs:domain gpo:Module ;
+    rdfs:range gpo:LearningOutcome ;
+    rdfs:label "hasOutcome" ;
+    rdfs:comment "Relates a module to a learning outcome it states." .
+
+gpo:hasCriterion a owl:ObjectProperty ;
+    rdfs:domain gpo:LearningOutcome ;
+    rdfs:range gpo:AssessmentCriterion ;
+    rdfs:label "hasCriterion" ;
+    rdfs:comment "Relates a learning outcome to one of its assessment criteria." .
+
+gpo:atCognitiveLevel a owl:ObjectProperty ;
+    rdfs:domain gpo:AssessmentCriterion ;
+    rdfs:range gpo:CognitiveLevel ;
+    rdfs:label "atCognitiveLevel" ;
+    rdfs:comment "The baseline cognitive level asserted for a criterion, assuming the required process has been taught. See rule R1." .
+
+gpo:requiresProcess a owl:ObjectProperty ;
+    rdfs:domain gpo:AssessmentCriterion ;
+    rdfs:range gpo:Process ;
+    rdfs:label "requiresProcess" ;
+    rdfs:comment "The procedure a criterion requires the learner to carry out." .
+
+gpo:teachesProcess a owl:ObjectProperty ;
+    rdfs:domain gpo:Module ;
+    rdfs:range gpo:Process ;
+    rdfs:label "teachesProcess" ;
+    rdfs:comment "A procedure the module explicitly teaches." .
+
+gpo:addressesCriterion a owl:ObjectProperty ;
+    rdfs:domain gpo:LearningActivity ;
+    rdfs:range gpo:AssessmentCriterion ;
+    rdfs:label "addressesCriterion" ;
+    rdfs:comment "The criterion a learning activity is designed to address." .
+
+gpo:hasEncountered a owl:ObjectProperty ;
+    rdfs:domain gpo:Learner ;
+    rdfs:range gpo:Process ;
+    rdfs:label "hasEncountered" ;
+    rdfs:comment "A procedure the learner has previously been taught or has completed an activity requiring." .
+
+gpo:belongsToDimension a owl:ObjectProperty ;
+    rdfs:domain gpo:GameElement ;
+    rdfs:range gpo:Dimension ;
+    rdfs:label "belongsToDimension" ;
+    rdfs:comment "The dimension of the Toda et al. (2019) taxonomy to which an element belongs." .
+
+gpo:supportsLevel a owl:ObjectProperty ;
+    rdfs:domain gpo:GameElement ;
+    rdfs:range gpo:CognitiveLevel ;
+    rdfs:label "supportsLevel" ;
+    rdfs:comment "A cognitive level at which the element is appropriate. Rule R2." .
+
+gpo:contraindicatedFor a owl:ObjectProperty ;
+    rdfs:domain gpo:GameElement ;
+    rdfs:range gpo:CognitiveLevel ;
+    rdfs:label "contraindicatedFor" ;
+    rdfs:comment "A cognitive level at which the element is expected to work against the learning. Rule R2." .
+
+gpo:gamifies a owl:ObjectProperty ;
+    rdfs:domain gpo:GamifiedActivityDesign ;
+    rdfs:range gpo:LearningActivity ;
+    rdfs:label "gamifies" ;
+    rdfs:comment "The activity a design gamifies." .
+
+gpo:appliesElement a owl:ObjectProperty ;
+    rdfs:domain gpo:GamifiedActivityDesign ;
+    rdfs:range gpo:GameElement ;
+    rdfs:label "appliesElement" ;
+    rdfs:comment "A game element the design applies." .
+
+gpo:hasRewardBasis a owl:ObjectProperty ;
+    rdfs:domain gpo:GamifiedActivityDesign ;
+    rdfs:range gpo:RewardBasis ;
+    rdfs:label "hasRewardBasis" ;
+    rdfs:comment "What the design rewards. Rule R5." .
+
+gpo:isHigherThan a owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:domain gpo:CognitiveLevel ;
+    rdfs:range gpo:CognitiveLevel ;
+    rdfs:label "isHigherThan" ;
+    rdfs:comment "Orders the cognitive levels." .
+
+gpo:forLearner a owl:ObjectProperty ;
+    rdfs:domain gpo:LearnerActivityContext ;
+    rdfs:range gpo:Learner ;
+    rdfs:label "forLearner" ;
+    rdfs:comment "The learner a context concerns." .
+
+gpo:forActivity a owl:ObjectProperty ;
+    rdfs:domain gpo:LearnerActivityContext ;
+    rdfs:range gpo:LearningActivity ;
+    rdfs:label "forActivity" ;
+    rdfs:comment "The activity a context concerns." .
+
+gpo:hasCompletedIdentical a owl:ObjectProperty ;
+    rdfs:domain gpo:Learner ;
+    rdfs:range gpo:LearningActivity ;
+    rdfs:label "hasCompletedIdentical" ;
+    rdfs:comment "An activity the learner has already completed in the same context, with the same data and the same tools. Thompson et al. (2008) treat this case as Remember. Rule R1c." .
+
+gpo:hasEffectiveLevel a owl:ObjectProperty ;
+    rdfs:domain gpo:LearnerActivityContext ;
+    rdfs:range gpo:CognitiveLevel ;
+    rdfs:label "hasEffectiveLevel" ;
+    rdfs:comment "The cognitive level the activity occupies for that learner. Inferred by rule R1, never asserted by hand." .
+
+
+#################################################################
+#  DATA PROPERTIES
+#################################################################
+
+gpo:criterionCode a owl:DatatypeProperty ;
+    rdfs:domain gpo:AssessmentCriterion ;
+    rdfs:range xsd:string ;
+    rdfs:label "criterionCode" ;
+    rdfs:comment "The code the study guide gives the criterion, for example D.2.1." .
+
+gpo:criterionText a owl:DatatypeProperty ;
+    rdfs:domain gpo:AssessmentCriterion ;
+    rdfs:range xsd:string ;
+    rdfs:label "criterionText" ;
+    rdfs:comment "The criterion exactly as printed in the study guide." .
+
+gpo:levelFlag a owl:DatatypeProperty ;
+    rdfs:domain gpo:AssessmentCriterion ;
+    rdfs:range xsd:string ;
+    rdfs:label "levelFlag" ;
+    rdfs:comment "Why the asserted level is uncertain: Thompson, Split, Repeat or Ambiguous. Empty where the level is unambiguous." .
+
+gpo:aiVulnerability a owl:DatatypeProperty ;
+    rdfs:domain gpo:LearningActivity ;
+    rdfs:range xsd:string ;
+    rdfs:label "aiVulnerability" ;
+    rdfs:comment "high, medium or low. The degree to which the artefact the activity requires can be produced by a generative model without the learner doing the cognitive work. Rule R5." .
+
+gpo:weekTaught a owl:DatatypeProperty ;
+    rdfs:domain gpo:Module ;
+    rdfs:range xsd:integer ;
+    rdfs:label "weekTaught" ;
+    rdfs:comment "The teaching week by which a process has been covered. Used to populate learner exposure." .
+
+
+#################################################################
+#  COGNITIVE LEVELS  (Anderson et al., 2001)
+#################################################################
+
+gpo:Remember a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Remember" .
+
+gpo:Understand a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Understand" ;
+    gpo:isHigherThan gpo:Remember .
+
+gpo:Apply a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Apply" ;
+    gpo:isHigherThan gpo:Remember , gpo:Understand .
+
+gpo:Analyse a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Analyse" ;
+    gpo:isHigherThan gpo:Remember , gpo:Understand , gpo:Apply .
+
+gpo:Evaluate a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Evaluate" ;
+    gpo:isHigherThan gpo:Remember , gpo:Understand , gpo:Apply , gpo:Analyse .
+
+gpo:Create a owl:NamedIndividual , gpo:CognitiveLevel ;
+    rdfs:label "Create" ;
+    gpo:isHigherThan gpo:Remember , gpo:Understand , gpo:Apply , gpo:Analyse , gpo:Evaluate .
+
+
+#################################################################
+#  DIMENSIONS AND GAME ELEMENTS  (Toda et al., 2019)
+#################################################################
+
+gpo:Measurement a owl:NamedIndividual , gpo:Dimension ;
+    rdfs:label "Measurement" ;
+    rdfs:comment "Elements through which the environment responds to the learner. Their absence leaves the learner disoriented for want of feedback." .
+
+gpo:Ecological a owl:NamedIndividual , gpo:Dimension ;
+    rdfs:label "Ecological" ;
+    rdfs:comment "Properties of the environment in which the gamification is implemented. Their absence makes the environment feel dull." .
+
+gpo:Social a owl:NamedIndividual , gpo:Dimension ;
+    rdfs:label "Social" ;
+    rdfs:comment "Elements concerning interaction between learners. Their absence isolates the learner." .
+
+gpo:Personal a owl:NamedIndividual , gpo:Dimension ;
+    rdfs:label "Personal" ;
+    rdfs:comment "Elements concerning the individual learner. Their absence leaves the system without meaning for the learner." .
+
+gpo:Fictional a owl:NamedIndividual , gpo:Dimension ;
+    rdfs:label "Fictional" ;
+    rdfs:comment "Elements tying learner and environment together through narrative. Their absence removes any sense of why a task should be performed." .
+
+gpo:Point a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Point" ;
+    gpo:belongsToDimension gpo:Measurement ;
+    gpo:supportsLevel gpo:Remember , gpo:Apply .
+
+gpo:Progression a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Progression" ;
+    gpo:belongsToDimension gpo:Measurement ;
+    gpo:supportsLevel gpo:Remember , gpo:Apply .
+
+gpo:Level a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Level" ;
+    gpo:belongsToDimension gpo:Measurement ;
+    gpo:supportsLevel gpo:Apply .
+
+gpo:Stats a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Stats" ;
+    gpo:belongsToDimension gpo:Measurement ;
+    gpo:supportsLevel gpo:Understand , gpo:Analyse , gpo:Evaluate .
+
+gpo:Acknowledgement a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Acknowledgement" ;
+    gpo:belongsToDimension gpo:Measurement ;
+    gpo:supportsLevel gpo:Remember , gpo:Understand , gpo:Create .
+
+gpo:Chance a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Chance" ;
+    gpo:belongsToDimension gpo:Ecological ;
+    gpo:supportsLevel gpo:Remember ;
+    gpo:contraindicatedFor gpo:Analyse , gpo:Evaluate , gpo:Create .
+
+gpo:ImposedChoice a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "ImposedChoice" ;
+    gpo:belongsToDimension gpo:Ecological ;
+    gpo:supportsLevel gpo:Analyse , gpo:Evaluate .
+
+gpo:Economy a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Economy" ;
+    gpo:belongsToDimension gpo:Ecological .
+
+gpo:Rarity a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Rarity" ;
+    gpo:belongsToDimension gpo:Ecological .
+
+gpo:TimePressure a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "TimePressure" ;
+    gpo:belongsToDimension gpo:Ecological ;
+    gpo:supportsLevel gpo:Remember , gpo:Apply ;
+    gpo:contraindicatedFor gpo:Understand , gpo:Analyse , gpo:Create .
+
+gpo:Competition a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Competition" ;
+    gpo:belongsToDimension gpo:Social ;
+    gpo:supportsLevel gpo:Evaluate ;
+    gpo:contraindicatedFor gpo:Create .
+
+gpo:Cooperation a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Cooperation" ;
+    gpo:belongsToDimension gpo:Social ;
+    gpo:supportsLevel gpo:Understand , gpo:Analyse , gpo:Evaluate .
+
+gpo:Reputation a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Reputation" ;
+    gpo:belongsToDimension gpo:Social ;
+    gpo:supportsLevel gpo:Evaluate .
+
+gpo:SocialPressure a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "SocialPressure" ;
+    gpo:belongsToDimension gpo:Social ;
+    gpo:contraindicatedFor gpo:Understand , gpo:Create .
+
+gpo:Sensation a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Sensation" ;
+    gpo:belongsToDimension gpo:Personal .
+
+gpo:Objective a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Objective" ;
+    gpo:belongsToDimension gpo:Personal ;
+    gpo:supportsLevel gpo:Understand , gpo:Apply , gpo:Analyse , gpo:Create .
+
+gpo:Puzzle a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Puzzle" ;
+    gpo:belongsToDimension gpo:Personal ;
+    gpo:supportsLevel gpo:Understand , gpo:Apply , gpo:Analyse .
+
+gpo:Novelty a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Novelty" ;
+    gpo:belongsToDimension gpo:Personal ;
+    gpo:supportsLevel gpo:Remember , gpo:Understand , gpo:Create .
+
+gpo:Renovation a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Renovation" ;
+    gpo:belongsToDimension gpo:Personal ;
+    gpo:supportsLevel gpo:Create .
+
+gpo:Narrative a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Narrative" ;
+    gpo:belongsToDimension gpo:Fictional ;
+    gpo:supportsLevel gpo:Create .
+
+gpo:Storytelling a owl:NamedIndividual , gpo:GameElement ;
+    rdfs:label "Storytelling" ;
+    gpo:belongsToDimension gpo:Fictional ;
+    gpo:supportsLevel gpo:Create .
+
+
+#################################################################
+#  REWARD BASES
+#################################################################
+
+gpo:CompletionReward a owl:NamedIndividual , gpo:RewardBasis ;
+    rdfs:label "CompletionReward" ;
+    rdfs:comment "Reward attaches to completing the artefact the activity asks for." .
+
+gpo:ProcessReward a owl:NamedIndividual , gpo:RewardBasis ;
+    rdfs:label "ProcessReward" ;
+    rdfs:comment "Reward attaches to the steps the learner takes." .
+
+gpo:ExplanationReward a owl:NamedIndividual , gpo:RewardBasis ;
+    rdfs:label "ExplanationReward" ;
+    rdfs:comment "Reward attaches to the learner explaining or justifying the work." .

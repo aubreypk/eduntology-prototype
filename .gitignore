@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------
+# Course material that is not ours to publish.
+#
+# curriculum/tut holds the learning outcomes and assessment criteria of
+# Principles of Programming A and B at the Tshwane University of Technology.
+# That is departmental material. The model in model/ is the contribution and is
+# published; the curriculum is not. curriculum/example is invented and IS
+# committed, so that this repository builds and runs for anyone.
+#
+# See curriculum/README.md.
+# ---------------------------------------------------------------------------
+curriculum/tut/
+curriculum/*/
+!curriculum/example/
+!curriculum/README.md
+
+# ---------------------------------------------------------------------------
+# Build output. All of it is reproducible from the model and a curriculum, so
+# none of it belongs in the repository — and the knowledge base would carry the
+# curriculum's text with it.
+# ---------------------------------------------------------------------------
+build/kb.db
+build/d1-seed.sql
+build/inferred.ttl
+build/build_report.json
+build/parity_report.json
+api/test/kb.test.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+web/dist/
+.wrangler/
+npm-debug.log*
+.vite/
+
+# Evaluation output, kept out until Chapter 6 decides what is reported
+evaluation/output/
+
+# Editors and operating systems
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

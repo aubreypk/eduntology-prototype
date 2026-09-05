@@ -1,0 +1,44 @@
+# Cloudflare Worker configuration.
+#
+# The Worker serves the API from D1 and the built interface from Workers Assets,
+# so the whole platform is one deployment on the free tier. Nothing in the
+# bundle reasons: rdflib and pySHACL run at build time, on a machine that has
+# them, and what reaches the edge is the conclusions and the lookups that read
+# them. That is the argument of Section 4.6, and deploying here is what makes it
+# a demonstration rather than a claim.
+#
+# First time, from the api folder:
+#
+#   npx wrangler login
+#   npx wrangler d1 create eduntology
+#     -> copy the database_id it prints into this file, below
+#   npx wrangler d1 execute eduntology --local  --file=../build/d1-seed.sql
+#   npx wrangler dev
+#
+# To deploy:
+#
+#   cd ../web && npm run build && cd ../api
+#   npx wrangler d1 execute eduntology --remote --file=../build/d1-seed.sql
+#   npx wrangler deploy
+
+name = "eduntology"
+main = "src/worker.js"
+compatibility_date = "2025-09-01"
+
+# The built interface. `npm run build` in ../web writes it; until then the
+# Worker answers API calls and reports that the interface is missing.
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# The knowledge base. Create it once with `npx wrangler d1 create eduntology`
+# and paste the id it gives you over the placeholder below; wrangler will not
+# deploy until you do.
+[[d1_databases]]
+binding = "DB"
+database_name = "eduntology"
+database_id = "PASTE-THE-ID-FROM-wrangler-d1-create-HERE"
+
+[observability]
+enabled = true

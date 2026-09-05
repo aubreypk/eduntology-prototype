@@ -1,0 +1,22 @@
+{
+  "name": "eduntology-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "The platform's API. Serves what the model concluded at build time; holds no reasoner.",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "test": "node test/run-tests.mjs",
+    "cf:dev": "wrangler dev",
+    "cf:seed:local": "wrangler d1 execute eduntology --local --file=../build/d1-seed.sql",
+    "cf:seed:remote": "wrangler d1 execute eduntology --remote --file=../build/d1-seed.sql",
+    "cf:deploy": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "3.99.0"
+  }
+}

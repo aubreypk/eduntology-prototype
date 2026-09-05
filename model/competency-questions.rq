@@ -1,0 +1,87 @@
+# ============================================================
+#  Competency questions for the Gamified Programming Ontology
+#
+#  These specify what the ontology must be able to answer, and
+#  they constitute Layer 1 of the evaluation described in
+#  Chapter 3. An ontology that cannot answer them has failed,
+#  irrespective of how the prototype performs.
+#
+#  Run against gpo-inferred.ttl (gpo.ttl after the R1 queries
+#  have been materialised).
+# ============================================================
+
+PREFIX gpo:  <http://www.tut.ac.za/ontologies/gpo#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# ---- CQ1  Which elements suit an Understand-level criterion on iteration?
+SELECT ?criterion ?element WHERE {
+    ?criterion gpo:atCognitiveLevel gpo:Understand ;
+               gpo:requiresProcess ?p .
+    ?p rdfs:label ?plabel .
+    FILTER(CONTAINS(LCASE(?plabel), "loop") || CONTAINS(LCASE(?plabel), "iteration"))
+    ?element gpo:supportsLevel gpo:Understand .
+}
+
+# ---- CQ2  Which elements are contraindicated at Create?
+SELECT ?element ?dimension WHERE {
+    ?element gpo:contraindicatedFor gpo:Create ;
+             gpo:belongsToDimension ?dimension .
+}
+
+# ---- CQ3  At what level does an activity sit for a learner who HAS been taught the process?
+SELECT ?learner ?activity ?level WHERE {
+    ?ctx gpo:forLearner ?learner ;
+         gpo:forActivity ?activity ;
+         gpo:hasEffectiveLevel ?level .
+    ?activity gpo:addressesCriterion ?c .
+    ?c gpo:requiresProcess ?p .
+    ?learner gpo:hasEncountered ?p .
+}
+
+# ---- CQ4  And for a learner who has NOT? (CQ3 and CQ4 together demonstrate R1)
+SELECT ?learner ?activity ?level WHERE {
+    ?ctx gpo:forLearner ?learner ;
+         gpo:forActivity ?activity ;
+         gpo:hasEffectiveLevel ?level .
+    ?activity gpo:addressesCriterion ?c .
+    ?c gpo:requiresProcess ?p .
+    FILTER NOT EXISTS { ?learner gpo:hasEncountered ?p }
+}
+
+# ---- CQ5  Does a design satisfy the dimension-balance constraint?
+SELECT ?design (COUNT(DISTINCT ?dim) AS ?dimensions) WHERE {
+    ?design a gpo:GamifiedActivityDesign .
+    OPTIONAL { ?design gpo:appliesElement/gpo:belongsToDimension ?dim }
+} GROUP BY ?design
+
+# ---- CQ6  Is any element in a design contraindicated for the level it is attached to?
+SELECT ?design ?element ?level WHERE {
+    ?design gpo:appliesElement ?element ;
+            gpo:gamifies ?activity .
+    ?activity gpo:addressesCriterion ?criterion .
+    ?criterion gpo:atCognitiveLevel ?level .
+    ?element gpo:contraindicatedFor ?level .
+}
+
+# ---- CQ7  Which criteria have no gamified activity aligned to them?
+SELECT ?criterion ?code WHERE {
+    ?criterion a gpo:AssessmentCriterion ;
+               gpo:criterionCode ?code .
+    FILTER NOT EXISTS { ?a gpo:addressesCriterion ?criterion }
+}
+
+# ---- CQ8  Which designs reward completion on a highly AI-vulnerable activity?
+SELECT ?design ?activity WHERE {
+    ?design gpo:gamifies ?activity ;
+            gpo:hasRewardBasis gpo:CompletionReward .
+    ?activity gpo:aiVulnerability "high" .
+}
+
+# ---- CQ9  Is the Zeng et al. (2024) negative combination flagged?
+#           Expect: Measurement count >= 3, no Personal, no Fictional.
+SELECT ?design (COUNT(DISTINCT ?e) AS ?measurementElements) WHERE {
+    ?design gpo:appliesElement ?e .
+    ?e gpo:belongsToDimension gpo:Measurement .
+    FILTER NOT EXISTS { ?design gpo:appliesElement/gpo:belongsToDimension gpo:Personal }
+    FILTER NOT EXISTS { ?design gpo:appliesElement/gpo:belongsToDimension gpo:Fictional }
+} GROUP BY ?design

@@ -1,0 +1,147 @@
+@prefix gpo:  <http://www.tut.ac.za/ontologies/gpo#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ============================================================
+#  SHACL constraints for the Gamified Programming Ontology
+#
+#  Rules R2 to R5 of the model. These are expressed in SHACL
+#  rather than OWL because each depends either on counting
+#  across a property chain or on the ABSENCE of a value, and
+#  OWL's open-world assumption cannot conclude absence.
+#
+#  Run with:  pyshacl -s gpo-shapes.ttl -d gpo-inferred.ttl -f human
+#  where gpo-inferred.ttl is gpo.ttl after the R1 queries have
+#  been materialised.
+# ============================================================
+
+
+# SHACL requires prefixes used inside sh:select to be declared on a node
+# referenced by sh:prefixes. Declaring them here.
+<http://www.tut.ac.za/ontologies/gpo>
+    sh:declare [ sh:prefix "gpo"  ; sh:namespace "http://www.tut.ac.za/ontologies/gpo#"^^xsd:anyURI ] ,
+               [ sh:prefix "rdfs" ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ] .
+
+# ------------------------------------------------------------
+#  R2  Element suitability
+#  No design may apply an element contraindicated for the
+#  cognitive level of the criterion its activity addresses.
+#
+#  This is the PERMISSIVE reading: an element with no stated
+#  suitability at a level is allowed, and only contraindication
+#  is an error. The stricter alternative - requiring positive
+#  support, a whitelist - was considered and rejected, because
+#  the matrix has no entries at Analyse (no criterion in the
+#  corpus sits at that level) and a whitelist would reject every
+#  design at a level the corpus cannot populate.
+# ------------------------------------------------------------
+gpo:R2_NoContraindicatedElement
+    a sh:NodeShape ;
+    sh:targetClass gpo:GamifiedActivityDesign ;
+    sh:sparql [
+        sh:message "R2 violated: element {?element} is contraindicated for level {?level}, which is the level of the criterion this design's activity addresses." ;
+        sh:prefixes <http://www.tut.ac.za/ontologies/gpo> ;
+        sh:select """
+            SELECT $this ?element ?level WHERE {
+                $this gpo:appliesElement ?element ;
+                      gpo:gamifies ?activity .
+                ?activity gpo:addressesCriterion ?criterion .
+                ?criterion gpo:atCognitiveLevel ?level .
+                ?element gpo:contraindicatedFor ?level .
+            }
+        """ ;
+    ] .
+
+# ------------------------------------------------------------
+#  R3  Dimension balance
+#  A design must draw on at least three of the five dimensions,
+#  and must include at least one Personal and one Measurement
+#  element. Derived by this study from the consequences Toda
+#  et al. (2019) state for the absence of each dimension.
+# ------------------------------------------------------------
+gpo:R3_DimensionBalance
+    a sh:NodeShape ;
+    sh:targetClass gpo:GamifiedActivityDesign ;
+    sh:sparql [
+        sh:message "R3 violated: this design draws on fewer than three of the five dimensions." ;
+        sh:prefixes <http://www.tut.ac.za/ontologies/gpo> ;
+        sh:select """
+            SELECT $this WHERE {
+                {
+                    SELECT $this (COUNT(DISTINCT ?dim) AS ?dims) WHERE {
+                        $this a gpo:GamifiedActivityDesign .
+                        OPTIONAL { $this gpo:appliesElement/gpo:belongsToDimension ?dim }
+                    } GROUP BY $this
+                }
+                FILTER (?dims < 3)
+            }
+        """ ;
+    ] ,
+    [
+        sh:message "R3 violated: this design includes no Personal element. Toda et al. (2019) state that the absence of Personal elements leaves the system without meaning for the learner." ;
+        sh:prefixes <http://www.tut.ac.za/ontologies/gpo> ;
+        sh:select """
+            SELECT $this WHERE {
+                $this a gpo:GamifiedActivityDesign .
+                FILTER NOT EXISTS {
+                    $this gpo:appliesElement/gpo:belongsToDimension gpo:Personal
+                }
+            }
+        """ ;
+    ] ,
+    [
+        sh:message "R3 violated: this design includes no Measurement element. Toda et al. (2019) state that the absence of Measurement elements leaves the learner disoriented, their actions receiving no feedback." ;
+        sh:prefixes <http://www.tut.ac.za/ontologies/gpo> ;
+        sh:select """
+            SELECT $this WHERE {
+                $this a gpo:GamifiedActivityDesign .
+                FILTER NOT EXISTS {
+                    $this gpo:appliesElement/gpo:belongsToDimension gpo:Measurement
+                }
+            }
+        """ ;
+    ] .
+
+# ------------------------------------------------------------
+#  R4  Extrinsic stacking - PROPOSED, TESTED, REMOVED
+#
+#  R4 required three or more Measurement elements with nothing
+#  Personal and nothing Fictional, and was intended to reject the
+#  combination Zeng et al. (2024) found to produce a negative
+#  effect on attainment: levels, badges and leaderboards.
+#
+#  On testing it did not fire, correctly. In the taxonomy of Toda
+#  et al. (2019) a leaderboard is a synonym of Competition, which
+#  belongs to the Social dimension, not Measurement. That
+#  combination therefore has two Measurement elements, not three,
+#  and the threshold had been set to match a mis-classification.
+#
+#  R4 is removed rather than re-thresholded because R3 already
+#  rejects the same design, and does so for a better reason: the
+#  absence of Personal and Fictional elements, which is a
+#  consequence Toda et al. state directly. The rejection is
+#  therefore a prediction from the framework rather than a rule
+#  fitted to the observed result.
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+#  R5  AI vulnerability
+#  Where the activity's artefact can be produced by a generative
+#  model without the learner doing the cognitive work, reward
+#  must not attach to completion.
+# ------------------------------------------------------------
+gpo:R5_AiVulnerableReward
+    a sh:NodeShape ;
+    sh:targetClass gpo:GamifiedActivityDesign ;
+    sh:sparql [
+        sh:message "R5 violated: this design rewards completion on an activity of high AI vulnerability. Reward should attach to process or explanation instead." ;
+        sh:prefixes <http://www.tut.ac.za/ontologies/gpo> ;
+        sh:select """
+            SELECT $this WHERE {
+                $this gpo:gamifies ?activity ;
+                      gpo:hasRewardBasis gpo:CompletionReward .
+                ?activity gpo:aiVulnerability "high" .
+            }
+        """ ;
+    ] .

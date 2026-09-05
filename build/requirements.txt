@@ -1,0 +1,9 @@
+# Design time: the reasoner and the SHACL engine. Used by build_kb.py and
+# verify_parity.py only, never by the running platform.
+rdflib>=7.0
+pyshacl>=0.26
+
+# Run time: the API.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6

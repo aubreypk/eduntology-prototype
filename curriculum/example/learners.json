@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "Declared prior exposure for the example curriculum. Each learner's",
+    "'encountered' list names taught processes by the code the curriculum graph",
+    "gives them (gpo:P_X01 here, so 'X01').",
+    "",
+    "The four positions are chosen so that rule R1 has something to say. E2 has",
+    "met the operator processes but not selection; E3 has met selection but not",
+    "iteration. The same activity therefore sits at Apply for one of them and at",
+    "Create for the other, which is the demonstration."
+  ],
+
+  "learners": [
+    {
+      "id": "E1",
+      "label": "Week 1, nothing taught yet",
+      "note": "Has met no procedure. Every activity asks this learner to assemble something they have not been shown.",
+      "encountered": []
+    },
+    {
+      "id": "E2",
+      "label": "Week 3, operators covered",
+      "note": "Arithmetic, relational comparison and flowcharts taught. Selection and iteration not yet.",
+      "encountered": ["X01", "X02", "X08"]
+    },
+    {
+      "id": "E3",
+      "label": "Week 8, selection covered",
+      "note": "Selection and nesting now taught. Loops still to come.",
+      "encountered": ["X01", "X02", "X03", "X04", "X08"]
+    },
+    {
+      "id": "E4",
+      "label": "Week 13, module complete",
+      "note": "The whole of PROG101.",
+      "encountered": ["X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08"]
+    }
+  ]
+}

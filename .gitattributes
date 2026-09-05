@@ -1,0 +1,18 @@
+# Normalise line endings. The work moves between a Windows machine and Linux
+# tooling, and without this every file looks changed after a round trip.
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+*.ttl  text
+*.rq   text
+*.sql  text
+*.json text
+*.md   text
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
