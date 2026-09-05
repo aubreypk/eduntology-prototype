@@ -59,6 +59,26 @@ def main():
     contexts = db.execute(
         "SELECT learner_id, activity_id, effective_level FROM context").fetchall()
 
+    # An activity whose criteria all lack a process gets no level at all: R1a
+    # and R1b both require one, so the rule cannot fire and the context table
+    # has no row. The platform then has no level to select game elements on.
+    # This is easy to miss, because the contexts simply are not there to count.
+    activities = [r["id"] for r in db.execute("SELECT id FROM activity")]
+    learners = [r["id"] for r in db.execute("SELECT id FROM learner")]
+    with_level = {c["activity_id"] for c in contexts}
+    silent = sorted(set(activities) - with_level)
+    if silent:
+        print("Activities for which rule R1 derives no level at all: %d of %d"
+              % (len(silent), len(activities)))
+        print("(%d contexts are absent, not merely divergent)"
+              % (len(silent) * len(learners)))
+        for aid in silent:
+            codes = [c["code"] for c in addressed.get(aid, [])]
+            print("   %-16s %s" % (aid, ", ".join(codes)))
+        print("   The asserted level of these criteria stands unused: no rule")
+        print("   reaches them, so the platform has nothing to gamify against.")
+        print()
+
     direct = 0          # mechanism (i)
     spread = 0          # mechanism (ii)
     both = 0
