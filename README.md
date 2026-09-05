@@ -61,6 +61,16 @@ the rules for the running platform, and that script is how it is put on trial.
 Windows commands throughout. You need **Python 3.10+** and **Node 22.5+**
 (`node:sqlite` arrived in 22.5).
 
+> **`py` or `python`?** `py` is the Python launcher, which the installer from
+> python.org adds and the Microsoft Store build does not. If you get *"The term
+> 'py' is not recognized"* (PowerShell) or *"'py' is not recognized as an
+> internal or external command"* (cmd), write `python` instead of `py` in every
+> command below — nothing else changes. Check with `python --version`; if that
+> opens the Microsoft Store instead of printing a version, Python is not
+> actually installed, only its stub, and you want the installer from
+> <https://www.python.org/downloads/> with **Add python.exe to PATH** ticked.
+> A terminal opened before an install will not see it; open a new one.
+
 ```
 py -m pip install -r build\requirements.txt
 ```
@@ -170,6 +180,19 @@ One Worker serves the API from D1 and the built interface from Workers Assets.
    combination Zeng et al. (2024) found to depress attainment. The model rejects
    it, and does so for the absence of Personal and Fictional elements, which
    Toda et al. state in advance, rather than because Zeng reported the result.
+
+## If something does not work
+
+| Symptom | What it is |
+|---|---|
+| `'py' is not recognized` | The Python launcher is not installed. Use `python` everywhere instead. |
+| `python` opens the Microsoft Store | That is the App Execution Alias stub, not Python. Install from python.org with **Add python.exe to PATH** ticked, then open a new terminal. |
+| `No module named rdflib` | `py -m pip install -r build\requirements.txt` was not run, or ran against a different Python. `py -m pip --version` will tell you which one it is using. |
+| The build says `Curriculum: example` when you wanted the real one | `curriculum/tut` is not in this working copy. It is not tracked by git, so a fresh clone will not have it. Copy the folder across, or pass `--curriculum tut` to get a clear failure instead of a quiet substitution. |
+| `verify_parity.py` says Node is not on the PATH | It judges the JavaScript that deploys, so it needs Node as well as Python. |
+| The interface says the API could not be reached | `node api\dev-server.mjs` is not running, or the knowledge base has not been built. |
+| `npm install` fails behind the university proxy | Run it once on a network that allows the npm registry; the packages are cached afterwards. |
+| `verify_parity.py` reports disagreements | Not a bug to work around. It means the deployed platform would serve a verdict the reasoner does not support. Record it and bring it to supervision. |
 
 ## A note on the curriculum
 

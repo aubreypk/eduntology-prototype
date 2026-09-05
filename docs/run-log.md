@@ -5,7 +5,11 @@ Chapter 6 reports the verification output. **Paste the console output verbatim
 rather than summarising it** — the exact numbers are the evidence, and a
 disagreement is a finding rather than a bug to tidy away.
 
-Run everything from the repository root, in a Command Prompt.
+Run everything from the repository root. Command Prompt or PowerShell both
+work; the commands are identical.
+
+If `py` is not recognised, write `python` instead — see the README. The rest of
+this file uses `py`.
 
 ---
 
