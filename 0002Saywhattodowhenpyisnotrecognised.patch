@@ -1,0 +1,81 @@
+From 85b3a4a25ec99035fdad50b78e1b01463b3f4d2f Mon Sep 17 00:00:00 2001
+From: Aubrey Pule Khoza <aubreypk@gmail.com>
+Date: Sat, 5 Sep 2026 11:05:05 +0000
+Subject: [PATCH 2/2] Say what to do when py is not recognised
+
+The Python launcher ships with the python.org installer and not with the
+Microsoft Store build, so `py` is missing on plenty of machines and the error
+text differs between PowerShell and cmd, which makes it harder to search for.
+Names both forms, says to use `python` instead, and adds a troubleshooting
+table covering the failures likely to come up on a first run -- including the
+quiet one, where curriculum/tut is absent and the build measures the invented
+example curriculum without anybody noticing.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FSDM1Wo7WiT7h5vJNaY23D
+---
+ README.md       | 23 +++++++++++++++++++++++
+ docs/run-log.md |  6 +++++-
+ 2 files changed, 28 insertions(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 43fd0ff..188f956 100644
+--- a/README.md
++++ b/README.md
+@@ -61,6 +61,16 @@ the rules for the running platform, and that script is how it is put on trial.
+ Windows commands throughout. You need **Python 3.10+** and **Node 22.5+**
+ (`node:sqlite` arrived in 22.5).
+ 
++> **`py` or `python`?** `py` is the Python launcher, which the installer from
++> python.org adds and the Microsoft Store build does not. If you get *"The term
++> 'py' is not recognized"* (PowerShell) or *"'py' is not recognized as an
++> internal or external command"* (cmd), write `python` instead of `py` in every
++> command below — nothing else changes. Check with `python --version`; if that
++> opens the Microsoft Store instead of printing a version, Python is not
++> actually installed, only its stub, and you want the installer from
++> <https://www.python.org/downloads/> with **Add python.exe to PATH** ticked.
++> A terminal opened before an install will not see it; open a new one.
++
+ ```
+ py -m pip install -r build\requirements.txt
+ ```
+@@ -171,6 +181,19 @@ One Worker serves the API from D1 and the built interface from Workers Assets.
+    it, and does so for the absence of Personal and Fictional elements, which
+    Toda et al. state in advance, rather than because Zeng reported the result.
+ 
++## If something does not work
++
++| Symptom | What it is |
++|---|---|
++| `'py' is not recognized` | The Python launcher is not installed. Use `python` everywhere instead. |
++| `python` opens the Microsoft Store | That is the App Execution Alias stub, not Python. Install from python.org with **Add python.exe to PATH** ticked, then open a new terminal. |
++| `No module named rdflib` | `py -m pip install -r build\requirements.txt` was not run, or ran against a different Python. `py -m pip --version` will tell you which one it is using. |
++| The build says `Curriculum: example` when you wanted the real one | `curriculum/tut` is not in this working copy. It is not tracked by git, so a fresh clone will not have it. Copy the folder across, or pass `--curriculum tut` to get a clear failure instead of a quiet substitution. |
++| `verify_parity.py` says Node is not on the PATH | It judges the JavaScript that deploys, so it needs Node as well as Python. |
++| The interface says the API could not be reached | `node api\dev-server.mjs` is not running, or the knowledge base has not been built. |
++| `npm install` fails behind the university proxy | Run it once on a network that allows the npm registry; the packages are cached afterwards. |
++| `verify_parity.py` reports disagreements | Not a bug to work around. It means the deployed platform would serve a verdict the reasoner does not support. Record it and bring it to supervision. |
++
+ ## A note on the curriculum
+ 
+ `curriculum/example` is invented. PROG101 is not a real module.
+diff --git a/docs/run-log.md b/docs/run-log.md
+index 7be22bc..e329eee 100644
+--- a/docs/run-log.md
++++ b/docs/run-log.md
+@@ -5,7 +5,11 @@ Chapter 6 reports the verification output. **Paste the console output verbatim
+ rather than summarising it** — the exact numbers are the evidence, and a
+ disagreement is a finding rather than a bug to tidy away.
+ 
+-Run everything from the repository root, in a Command Prompt.
++Run everything from the repository root. Command Prompt or PowerShell both
++work; the commands are identical.
++
++If `py` is not recognised, write `python` instead — see the README. The rest of
++this file uses `py`.
+ 
+ ---
+ 
+-- 
+2.43.0
+
