@@ -32,7 +32,7 @@ directory = "../web/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# The knowledge base. Create it once with `npx wrangler d1 create eduntology`
+# The knowledge base. Create it once with `npx wrangler d1 create <name>`
 # and paste the id it gives you over the placeholder below; wrangler will not
 # deploy until you do.
 [[d1_databases]]

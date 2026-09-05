@@ -1,6 +1,7 @@
 // Take the figures Chapter 5 needs, the same way every time.
 //
 //   node docs/screenshots.mjs [--base http://127.0.0.1:8000] [--out docs/screenshots]
+//                              [--activity ACT_D2_01] [--browser msedge]
 //
 // Doing this by hand means a chapter whose figures were captured on different
 // days at different window sizes with different data behind them. This drives
@@ -26,11 +27,11 @@
 //   * Rebuild the knowledge base.  The script submits a correct answer, which
 //     is recorded, so a second run would start from a solved activity and the
 //     "before" figures would be wrong.  build_kb.py recreates the database.
-//   * Serve the BUILT interface, not the dev server.  The dev server injects
-//     tooling that is not present in use, and Chapter 6 audits the same build.
+//   * Serve the BUILT interface.  api/dev-server.mjs serves web/dist itself, on
+//     the same origin as the API, exactly as the Worker does — so build first,
+//     or there is no interface to photograph:
 //         cd web && npm run build
-//         cd ../api && npx wrangler dev          (or: node dev-server.mjs, with
-//                                                 web/dist served alongside)
+//         cd ..  && npm run api
 
 import { chromium } from 'playwright'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -48,6 +49,7 @@ function option (name, fallback) {
 const BASE = option('base', 'http://127.0.0.1:8000').replace(/\/$/, '')
 const OUT = resolve(ROOT, option('out', 'docs/screenshots'))
 const WANTED = option('browser', null)
+const PINNED = option('activity', null)
 const DESKTOP = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
 
@@ -136,11 +138,19 @@ async function main () {
   const last = learners[learners.length - 1]
   const catalogue = await api(`/api/activities?learner=${first.id}`)
 
-  const demo =
-    catalogue.find((a) => a.kind === 'complete' && a.criteria.some((c) => thompson.has(c))) ||
-    catalogue.find((a) => a.kind === 'complete') ||
-    catalogue[0]
+  // --activity pins the one the write-up discusses by name; otherwise the first
+  // code-completion activity resting on a Thompson-flagged criterion, those
+  // being the ones whose level turns on what has been taught.
+  const demo = PINNED
+    ? catalogue.find((a) => a.id === PINNED)
+    : (catalogue.find((a) => a.kind === 'complete' && a.criteria.some((c) => thompson.has(c))) ||
+       catalogue.find((a) => a.kind === 'complete') ||
+       catalogue[0])
 
+  if (PINNED && !demo) {
+    throw new Error(`No activity with id ${PINNED}. Available: ` +
+      catalogue.slice(0, 8).map((a) => a.id).join(', ') + ', ...')
+  }
   if (!demo) throw new Error('No activities in the knowledge base. Run build_kb.py.')
   console.log(`Demonstration activity: ${demo.id} (${demo.criteria.join(', ')})`)
 

@@ -141,7 +141,17 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@3 d1 execute eduntology --remote --yes --file=../build/d1-seed.sql
+        run: |
+          # Read the database name from wrangler.toml rather than repeating it.
+          # A literal here silently seeds nothing the day the name changes.
+          DB_NAME=$(grep -m1 '^database_name' wrangler.toml | cut -d'"' -f2)
+          DB_ID=$(grep -m1 '^database_id' wrangler.toml | cut -d'"' -f2)
+          if [ -z "$DB_NAME" ] || [ "${DB_ID#PASTE}" != "$DB_ID" ]; then
+            echo "::error::api/wrangler.toml still holds the placeholder database_id. Run: npx wrangler d1 create <name>"
+            exit 1
+          fi
+          echo "Seeding $DB_NAME"
+          npx --yes wrangler@3 d1 execute "$DB_NAME" --remote --yes --file=../build/d1-seed.sql
 
       - name: Deploy the Worker
         if: steps.creds.outputs.ready == 'true'

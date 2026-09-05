@@ -112,20 +112,21 @@ with pySHACL, and reports every disagreement.
 ### 4. Run it
 
 ```
-node api\dev-server.mjs
-```
-
-and in a second Command Prompt:
-
-```
-cd web
 npm install
-npm run dev
+cd web
+npm run build
+cd ..
+npm run api
 ```
 
-Then open <http://localhost:5173>. The development server needs no Cloudflare
-account, no wrangler and no network — it runs the same handler the Worker runs,
-over SQLite instead of D1.
+Then open <http://127.0.0.1:8000>. One process serves the API and the built
+interface on one origin, exactly as the Worker does — no Cloudflare account, no
+wrangler, no network.
+
+While changing the interface, `npm run dev` inside `web` is quicker: it reloads
+on save and proxies `/api` to port 8000. Use the built version for anything
+measured or photographed, because the dev server injects tooling that is not
+present in use.
 
 ### 5. Test the API
 
@@ -187,13 +188,13 @@ this repository and CI has no access to it.
 ```
 cd api
 npx wrangler login
-npx wrangler d1 create eduntology
+npx wrangler d1 create eduntology-prototype
 ```
 
 Paste the `database_id` it prints into `api\wrangler.toml`, then:
 
 ```
-npx wrangler d1 execute eduntology --local --file=..\build\d1-seed.sql
+npx wrangler d1 execute eduntology-prototype --local --file=..\build\d1-seed.sql
 npx wrangler dev
 ```
 
@@ -201,7 +202,7 @@ and when that looks right:
 
 ```
 cd ..\web && npm run build && cd ..\api
-npx wrangler d1 execute eduntology --remote --file=..\build\d1-seed.sql
+npx wrangler d1 execute eduntology-prototype --remote --file=..\build\d1-seed.sql
 npx wrangler deploy
 ```
 
@@ -217,7 +218,9 @@ Add two repository secrets under **Settings → Secrets and variables → Action
 | `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template, then add **Account → D1 → Edit** to it |
 
 Paste the `database_id` from `wrangler d1 create` into `api\wrangler.toml` and
-commit it. It is an identifier, not a credential, and is useless without the
+commit it. The `database_name` there is the single source of that name — the
+workflow reads it out of the file rather than repeating it, because a literal
+in two places seeds nothing the day they disagree. It is an identifier, not a credential, and is useless without the
 token.
 
 Pushes to `main` then deploy automatically. **Seeding is deliberate rather than

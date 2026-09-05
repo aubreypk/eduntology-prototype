@@ -8,8 +8,8 @@
     "dev": "node dev-server.mjs",
     "test": "node test/run-tests.mjs",
     "cf:dev": "wrangler dev",
-    "cf:seed:local": "wrangler d1 execute eduntology --local --file=../build/d1-seed.sql",
-    "cf:seed:remote": "wrangler d1 execute eduntology --remote --file=../build/d1-seed.sql",
+    "cf:seed:local": "wrangler d1 execute eduntology-prototype --local --file=../build/d1-seed.sql",
+    "cf:seed:remote": "wrangler d1 execute eduntology-prototype --remote --file=../build/d1-seed.sql",
     "cf:deploy": "wrangler deploy"
   },
   "engines": {

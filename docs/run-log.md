@@ -314,8 +314,13 @@ node api\dev-server.mjs
 then, in a second window:
 
 ```
-npm run figures -- --base http://127.0.0.1:8000
+npm run figures -- --base http://127.0.0.1:8000 --activity ACT_D2_01
 ```
+
+`--activity` pins the figure to the criterion Chapter 4 discusses by name.
+Without it the script takes the first code-completion activity resting on a
+Thompson-flagged criterion — a fair demonstration, but not the one the text
+names.
 
 - [ ] `docs\screenshots\` holds the PNGs and `FIGURES.md`
 - [ ] the two list figures show the same activities at different levels
