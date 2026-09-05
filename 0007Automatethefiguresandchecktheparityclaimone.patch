@@ -1,0 +1,581 @@
+From 8b2a6451a888400872902a51fb3839f57beb865f Mon Sep 17 00:00:00 2001
+From: Aubrey Pule Khoza <aubreypk@gmail.com>
+Date: Sat, 5 Sep 2026 14:35:01 +0000
+Subject: [PATCH 7/7] Automate the figures, and check the parity claim on every
+ push
+
+Two things that were going to be done by hand once and then quietly rot.
+
+docs/screenshots.mjs drives the real interface through the real API with
+Playwright and writes numbered PNGs plus a FIGURES.md of captions. Taking them
+by hand gives a chapter whose figures were captured on different days at
+different window sizes with different data behind them; this way a figure is
+regenerated after a change rather than re-staged. It finds the demonstration
+activity by looking for a criterion flagged Thompson rather than hard-coding an
+id, so it works whichever curriculum is loaded, and it reads the model answer
+from the curriculum file because the API does not expose answers. Fixed
+viewport, doubled device scale so figures stay legible at half width, reduced
+motion so no transition is caught half-finished, and a narrow-viewport shot as
+reflow evidence for Chapter 6.
+
+The workflow reasons over the ontology with rdflib and pySHACL, then puts the
+JavaScript that deploys on trial against pySHACL and fails the build on any
+disagreement. Every push therefore carries a fresh answer to the question
+Section 4.6 raises, rather than one result from one afternoon, and both reports
+are kept as artefacts so a claim in the dissertation can be traced to the run
+that produced it. It runs on curriculum/example, because the Tshwane material
+is not in this repository and CI has no access to it -- which is the split
+earning its keep a second time.
+
+Deployment is gated on the credentials being present, so the checks still run
+and report cleanly before any Cloudflare account exists. Seeding is opt-in
+through workflow_dispatch: the seed drops and recreates every table, and doing
+that unasked on each push would wipe whatever the deployed instance held.
+
+Checked: the workflow is valid YAML with the jobs and ordering intended, and
+every selector the screenshot script uses resolves against the components --
+ids to elements that carry them, classes to rules that exist and markup that
+uses them, and accessible names to text actually rendered.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FSDM1Wo7WiT7h5vJNaY23D
+---
+ .github/workflows/ci.yml | 152 +++++++++++++++++++++++++
+ README.md                |  49 ++++++++
+ docs/run-log.md          |  45 +++++---
+ docs/screenshots.mjs     | 234 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 462 insertions(+), 18 deletions(-)
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 docs/screenshots.mjs
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..603cd70
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,152 @@
++# Continuous evidence, then deployment.
++#
++# The `check` job is not decoration. It reasons over the ontology with rdflib
++# and pySHACL, then puts the JavaScript that deploys on trial against pySHACL
++# and fails the build on any disagreement. So every push carries a fresh answer
++# to the question Section 4.6 raises — whether materialising the reasoning at
++# design time costs anything in correctness — and the run log is a permanent
++# record of it rather than a single result from one afternoon.
++#
++# It runs against curriculum/example, because the Tshwane material is not in
++# this repository and CI has no access to it. The example curriculum exercises
++# every rule, including the case rule R1 exists for.
++
++name: check and deploy
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++    branches: [main]
++  workflow_dispatch:
++    inputs:
++      seed:
++        description: "Also re-seed the remote D1 database from the example curriculum"
++        type: boolean
++        default: false
++
++concurrency:
++  group: ${{ github.workflow }}-${{ github.ref }}
++  cancel-in-progress: true
++
++jobs:
++  check:
++    name: Reason, then check the deployed rules against the reasoner
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++          cache: pip
++          cache-dependency-path: build/requirements.txt
++
++      # node:sqlite arrived in 22.5 and the API and its tests depend on it.
++      - uses: actions/setup-node@v4
++        with:
++          node-version: "22"
++
++      - name: Install the design-time dependencies
++        run: python -m pip install -r build/requirements.txt
++
++      - name: Check the authored content
++        run: python build/check_content.py --curriculum example
++
++      - name: Check the design selection against R2, R3 and R5
++        run: python build/test_design.py --curriculum example
++
++      - name: Build the knowledge base
++        run: python build/build_kb.py --curriculum example
++
++      - name: Test the API
++        run: node api/test/run-tests.mjs
++
++      - name: Does the deployed JavaScript agree with pySHACL?
++        run: python build/verify_parity.py --curriculum example
++
++      - name: Build the interface
++        working-directory: web
++        run: |
++          npm install --no-audit --no-fund
++          npm run build
++
++      # The two reports are the evidence Chapter 6 cites. Keeping them as
++      # artefacts means a claim in the dissertation can be traced to the run
++      # that produced it.
++      - name: Keep the reports
++        if: always()
++        uses: actions/upload-artifact@v4
++        with:
++          name: reports-${{ github.sha }}
++          path: |
++            build/build_report.json
++            build/parity_report.json
++            build/d1-seed.sql
++          retention-days: 90
++
++  deploy:
++    name: Deploy to Cloudflare
++    needs: check
++    if: github.event_name != 'pull_request'
++    runs-on: ubuntu-latest
++    environment: cloudflare
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Are the credentials configured?
++        id: creds
++        env:
++          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++        run: |
++          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
++            echo "ready=false" >> "$GITHUB_OUTPUT"
++            echo "::notice::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not set. Skipping the deployment; the checks above still ran."
++          else
++            echo "ready=true" >> "$GITHUB_OUTPUT"
++          fi
++
++      - uses: actions/setup-python@v5
++        if: steps.creds.outputs.ready == 'true'
++        with:
++          python-version: "3.12"
++
++      - uses: actions/setup-node@v4
++        if: steps.creds.outputs.ready == 'true'
++        with:
++          node-version: "22"
++
++      - name: Rebuild the knowledge base and the D1 seed
++        if: steps.creds.outputs.ready == 'true'
++        run: |
++          python -m pip install -r build/requirements.txt
++          python build/build_kb.py --curriculum example
++
++      - name: Build the interface
++        if: steps.creds.outputs.ready == 'true'
++        working-directory: web
++        run: |
++          npm install --no-audit --no-fund
++          npm run build
++
++      # Seeding is deliberate rather than automatic. It drops and recreates
++      # every table, so an unasked-for seed on each push would wipe whatever
++      # the deployed instance had accumulated. Run the workflow by hand with
++      # "seed" ticked for the first deployment and after any change to the
++      # model or the curriculum.
++      - name: Seed the remote database
++        if: steps.creds.outputs.ready == 'true' && inputs.seed
++        working-directory: api
++        env:
++          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++        run: npx --yes wrangler@3 d1 execute eduntology --remote --yes --file=../build/d1-seed.sql
++
++      - name: Deploy the Worker
++        if: steps.creds.outputs.ready == 'true'
++        working-directory: api
++        env:
++          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
++          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
++        run: npx --yes wrangler@3 deploy
+diff --git a/README.md b/README.md
+index 51a6a1f..80a39f2 100644
+--- a/README.md
++++ b/README.md
+@@ -138,6 +138,36 @@ against R2, R3 and R5, the two test designs judged as the model predicts, every
+ model answer accepted and every wrong one rejected, every route answering, and
+ a full attempt moving an activity to Remember by rule R1c.
+ 
++## Figures for the write-up
++
++```
++npm install -D playwright
++npx playwright install chromium
++node docs\screenshots.mjs --base http://127.0.0.1:8000
++```
++
++Drives the real interface through the real API and writes numbered PNGs to
++`docs\screenshots\`, with a `FIGURES.md` of captions. Taking them by hand
++means a chapter whose figures were captured on different days at different
++window sizes with different data behind them; this way a figure is regenerated
++rather than re-staged.
++
++Rebuild the knowledge base first. The script submits a correct answer, which is
++recorded, so a second run would begin from a solved activity and the "before"
++figures would be wrong.
++
++## Continuous checking
++
++`.github/workflows/ci.yml` runs on every push. It reasons over the ontology with
++rdflib and pySHACL, then puts the JavaScript that deploys on trial against
++pySHACL and **fails the build on any disagreement**. Every push therefore
++carries a fresh answer to the question Section 4.6 raises, and `build_report.json`
++and `parity_report.json` are kept as artefacts so a claim in the dissertation can
++be traced to the run that produced it.
++
++It runs against `curriculum/example`, because the Tshwane material is not in
++this repository and CI has no access to it.
++
+ ## Deploying to Cloudflare
+ 
+ ```
+@@ -163,6 +193,25 @@ npx wrangler deploy
+ 
+ One Worker serves the API from D1 and the built interface from Workers Assets.
+ 
++### Deploying from GitHub instead
++
++Add two repository secrets under **Settings → Secrets and variables → Actions**:
++
++| Secret | Where to find it |
++|---|---|
++| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard, right-hand column of the Workers & Pages overview |
++| `CLOUDFLARE_API_TOKEN` | My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** template, then add **Account → D1 → Edit** to it |
++
++Paste the `database_id` from `wrangler d1 create` into `api\wrangler.toml` and
++commit it. It is an identifier, not a credential, and is useless without the
++token.
++
++Pushes to `main` then deploy automatically. **Seeding is deliberate rather than
++automatic**: it drops and recreates every table, so an unasked-for seed on each
++push would wipe whatever the deployed instance had accumulated. For the first
++deployment, and after any change to the model or the curriculum, run the
++workflow by hand from the Actions tab with **seed** ticked.
++
+ ## Two roles
+ 
+ The top bar switches point of view.
+diff --git a/docs/run-log.md b/docs/run-log.md
+index 0a3f55f..e7475a7 100644
+--- a/docs/run-log.md
++++ b/docs/run-log.md
+@@ -131,31 +131,40 @@ Then <http://localhost:5173>.
+ 
+ ---
+ 
+-## 6. Screenshots for Chapter 5
++## 6. Figures for Chapter 5
+ 
+-Take these from the **built** interface, not the development server — the dev
+-server injects tooling that would not be present in use, and the same build is
+-what the accessibility and performance audits in Chapter 6 will run against.
++Do not take these by hand. `docs/screenshots.mjs` drives the real interface
++through the real API and writes numbered PNGs with captions, so a figure can be
++regenerated after any change rather than re-staged.
++
++Rebuild the knowledge base first — the script submits a correct answer, and a
++second run would otherwise start from a solved activity.
+ 
+ ```
++py build\build_kb.py --curriculum tut
+ cd web
++npm install -D playwright
++npx playwright install chromium
+ npm run build
++cd ..
++node api\dev-server.mjs
++```
++
++then, in a second window:
++
+ ```
++node docs\screenshots.mjs --base http://127.0.0.1:8000
++```
++
++- [ ] `docs\screenshots\` holds the PNGs and `FIGURES.md`
++- [ ] the two list figures show the same activities at different levels
++- [ ] the two activity figures show different game elements for the same task
++
++Rebuild the knowledge base afterwards, so Chapter 6 measures a clean database:
+ 
+-then serve it through the Worker (`cd api && npx wrangler dev`), or keep using
+-`node api\dev-server.mjs` with `npm run preview` in `web`.
+-
+-- [ ] activity list as the first-week learner, nearly everything at Create
+-- [ ] activity list as the learner who has finished the module, mostly Apply
+-- [ ] the selection-writing activity as the first learner — the *Why this level* panel reading Create
+-- [ ] the same activity as the second — the same panel reading Apply
+-- [ ] the two gamification panels side by side, showing the different elements
+-- [ ] a correct attempt moving the activity to Remember, with the elements changing
+-- [ ] the design console rejecting *Levels, badges and leaderboards*
+-- [ ] the design console accepting the balanced design
+-- [ ] the model page: the suitability matrix and the traceability table
+-- [ ] the same activity in Student view and in Lecturer view, side by side
+-- [ ] the curriculum view, showing the criteria and their flags
++```
++py build\build_kb.py --curriculum tut
++```
+ 
+ ---
+ 
+diff --git a/docs/screenshots.mjs b/docs/screenshots.mjs
+new file mode 100644
+index 0000000..9f73348
+--- /dev/null
++++ b/docs/screenshots.mjs
+@@ -0,0 +1,234 @@
++// Take the figures Chapter 5 needs, the same way every time.
++//
++//   node docs/screenshots.mjs [--base http://127.0.0.1:8000] [--out docs/screenshots]
++//
++// Doing this by hand means a chapter whose figures were captured on different
++// days at different window sizes with different data behind them. This drives
++// the real interface through the real API and writes numbered PNGs, so a figure
++// can be regenerated after any change rather than re-staged.
++//
++// It is also the groundwork for Chapter 6. Layer 2 audits this interface for
++// accessibility and performance and Layer 4 walks tasks through it; both need
++// exactly this — a browser driving the built application without a person.
++//
++// Setup, once:
++//     npm install -D playwright
++//     npx playwright install chromium
++//
++// Before running:
++//   * Rebuild the knowledge base.  The script submits a correct answer, which
++//     is recorded, so a second run would start from a solved activity and the
++//     "before" figures would be wrong.  build_kb.py recreates the database.
++//   * Serve the BUILT interface, not the dev server.  The dev server injects
++//     tooling that is not present in use, and Chapter 6 audits the same build.
++//         cd web && npm run build
++//         cd ../api && npx wrangler dev          (or: node dev-server.mjs, with
++//                                                 web/dist served alongside)
++
++import { chromium } from 'playwright'
++import { mkdir, readFile, writeFile } from 'node:fs/promises'
++import { dirname, resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++
++const HERE = dirname(fileURLToPath(import.meta.url))
++const ROOT = resolve(HERE, '..')
++
++function option (name, fallback) {
++  const i = process.argv.indexOf('--' + name)
++  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback
++}
++
++const BASE = option('base', 'http://127.0.0.1:8000').replace(/\/$/, '')
++const OUT = resolve(ROOT, option('out', 'docs/screenshots'))
++const DESKTOP = { width: 1440, height: 900 }
++const PHONE = { width: 390, height: 844 }
++
++const shots = []
++
++async function api (path) {
++  const response = await fetch(`${BASE}${path}`)
++  if (!response.ok) {
++    throw new Error(`${path} answered ${response.status}. Is the API running at ${BASE}?`)
++  }
++  return response.json()
++}
++
++async function shot (page, name, caption) {
++  const file = `${String(shots.length + 1).padStart(2, '0')}-${name}.png`
++  await page.screenshot({ path: resolve(OUT, file), fullPage: true })
++  shots.push({ file, caption })
++  console.log(`  ${file}`)
++}
++
++// The interface keeps the role and the learner in localStorage, but everything
++// here goes through the controls a person would use. A figure captured by
++// driving the visible interface is a figure of the interface.
++async function setRole (page, role) {
++  await page.getByRole('button', { name: role === 'student' ? 'Student' : 'Lecturer', exact: true })
++    .click()
++  await page.waitForTimeout(150)
++}
++
++async function setLearner (page, id) {
++  await page.selectOption('#learner-select', id)
++  await page.waitForTimeout(350)
++}
++
++async function openActivity (page, activityId) {
++  await page.goto(`${BASE}/#/activity/${encodeURIComponent(activityId)}`)
++  await page.getByRole('heading', { level: 2 }).first().waitFor()
++  await page.waitForTimeout(350)
++}
++
++async function main () {
++  await mkdir(OUT, { recursive: true })
++
++  const meta = await api('/api/meta')
++  const curriculum = meta.build.curriculum
++  const learners = await api('/api/learners')
++  console.log(`Curriculum: ${curriculum}`)
++  console.log(`Learners:   ${learners.map((l) => l.id).join(', ')}`)
++  console.log(`Base:       ${BASE}`)
++  console.log(`Writing to  ${OUT}`)
++
++  // The demonstration turns on a criterion whose level depends on teaching.
++  // Find it rather than hard-coding an id, so the script works whichever
++  // curriculum is loaded.
++  const modules = await api('/api/curriculum')
++  const thompson = new Set(
++    modules.flatMap((m) => m.outcomes.flatMap((o) => o.criteria))
++      .filter((c) => c.flag === 'Thompson')
++      .map((c) => c.code))
++
++  const first = learners[0]
++  const last = learners[learners.length - 1]
++  const catalogue = await api(`/api/activities?learner=${first.id}`)
++
++  const demo =
++    catalogue.find((a) => a.kind === 'complete' && a.criteria.some((c) => thompson.has(c))) ||
++    catalogue.find((a) => a.kind === 'complete') ||
++    catalogue[0]
++
++  if (!demo) throw new Error('No activities in the knowledge base. Run build_kb.py.')
++  console.log(`Demonstration activity: ${demo.id} (${demo.criteria.join(', ')})`)
++
++  // The answer is not exposed by the API, on purpose. It is read from the
++  // curriculum the build reported using.
++  const content = JSON.parse(
++    await readFile(resolve(ROOT, 'curriculum', curriculum, 'activities.json'), 'utf-8'))
++  const authored = content.activities.find((a) => a.id === demo.id)
++
++  const browser = await chromium.launch()
++  const context = await browser.newContext({
++    viewport: DESKTOP,
++    deviceScaleFactor: 2,          // legible when printed at half width
++    reducedMotion: 'reduce',       // no half-finished transitions in a figure
++    colorScheme: 'dark'
++  })
++  const page = await context.newPage()
++
++  page.on('pageerror', (e) => console.error('  page error:', e.message))
++
++  await page.goto(BASE)
++  await page.waitForSelector('#learner-select')
++
++  // ---------------------------------------------------------------- student
++  console.log('\nStudent view')
++  await setRole(page, 'student')
++
++  await setLearner(page, first.id)
++  await shot(page, 'student-list-untaught',
++    `The activity list for ${first.id}, ${first.label}. Nothing has been taught, so rule R1 places every activity at Create.`)
++
++  await setLearner(page, last.id)
++  await shot(page, 'student-list-taught',
++    `The same activities for ${last.id}, ${last.label}. Every one is now at Apply. The activities did not change.`)
++
++  await setLearner(page, first.id)
++  await openActivity(page, demo.id)
++  await shot(page, 'activity-create',
++    `Activity ${demo.id} for ${first.id}: the level, and the model's reason for it. The required procedure has not been taught, so the activity sits at Create.`)
++
++  await setLearner(page, last.id)
++  await openActivity(page, demo.id)
++  await shot(page, 'activity-apply',
++    `The same activity for ${last.id}: Apply, and a different set of game elements, because the level differs.`)
++
++  // ---------------------------------------------------------------- an attempt
++  console.log('\nAn attempt')
++  if (authored && authored.answer && demo.kind === 'complete') {
++    await page.fill('#complete-input', authored.answer)
++    await page.getByRole('button', { name: /Submit answer/ }).click()
++    await page.waitForSelector('.note-good, .note-bad')
++    await page.waitForTimeout(400)
++    await shot(page, 'attempt-correct',
++      'A correct attempt. The reward attaches to what rule R5 permits for this activity, and the procedure is recorded against the learner.')
++
++    await openActivity(page, demo.id)
++    await shot(page, 'activity-remember',
++      'The same activity immediately afterwards. Rule R1c now places it at Remember, and the gamification has moved with the level.')
++  } else {
++    console.log('  skipped: the demonstration activity is not a code-completion item')
++  }
++
++  // ---------------------------------------------------------------- lecturer
++  console.log('\nLecturer view')
++  await page.goto(BASE)
++  await page.waitForSelector('#learner-select')
++  await setRole(page, 'lecturer')
++
++  await page.getByRole('link', { name: 'Curriculum' }).click()
++  await page.waitForTimeout(500)
++  await shot(page, 'curriculum',
++    'The curriculum the model is grounded in, read back out of the knowledge base: every outcome and criterion as the study guide states it, with its classification and flag.')
++
++  await page.getByRole('link', { name: 'Design console' }).click()
++  await page.waitForTimeout(600)
++  await page.getByRole('button', { name: /Levels, badges and leaderboards/ }).click()
++  await page.waitForTimeout(500)
++  await shot(page, 'console-rejects-zeng',
++    'The design console judging the combination Zeng et al. (2024) found to depress attainment. The model rejects it for the dimensions it lacks, which Toda et al. state in advance, rather than because Zeng reported the result.')
++
++  await page.getByRole('button', { name: /A balanced design/ }).click()
++  await page.waitForTimeout(500)
++  await shot(page, 'console-accepts-balanced',
++    'The same console on a balanced design. Every rule is satisfied, and the levels checked are named.')
++
++  await page.getByRole('link', { name: 'The model' }).click()
++  await page.waitForTimeout(600)
++  await shot(page, 'model-reference',
++    'The suitability matrix and the traceability table, both read from the knowledge base the ontology produced rather than written into the interface.')
++
++  // ---------------------------------------------------------------- reflow
++  console.log('\nReflow')
++  await page.setViewportSize(PHONE)
++  await page.goto(BASE)
++  await page.waitForSelector('#learner-select')
++  await setRole(page, 'student')
++  await page.waitForTimeout(400)
++  await shot(page, 'reflow-narrow',
++    'The student view at 390 CSS pixels. Nothing scrolls horizontally, which is what WCAG 2.1 reflow asks for.')
++
++  await browser.close()
++
++  // ---------------------------------------------------------------- captions
++  const lines = [
++    '# Figures',
++    '',
++    `Generated by \`docs/screenshots.mjs\` from the ${curriculum} curriculum.`,
++    'Regenerate rather than re-stage: rebuild the knowledge base, serve the built',
++    'interface, and run the script again.',
++    '',
++    ...shots.flatMap((s) => [`## ${s.file}`, '', s.caption, ''])
++  ]
++  await writeFile(resolve(OUT, 'FIGURES.md'), lines.join('\n'), 'utf-8')
++
++  console.log(`\n${shots.length} figures and FIGURES.md written to ${OUT}`)
++  console.log('The knowledge base now holds one recorded attempt. Rebuild before')
++  console.log('taking measurements for Chapter 6.')
++}
++
++main().catch((error) => {
++  console.error('\nFailed:', error.message)
++  process.exit(1)
++})
+-- 
+2.43.0
+
