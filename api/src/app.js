@@ -189,6 +189,18 @@ route('GET', '/api/activities', async ({ db, url }) => {
         WHERE ac.activity_id = ? ORDER BY c.code`,
       [activity.id])
 
+    // The outcome the activity sits under, so that the interface can group by
+    // it. No activity in either curriculum spans two outcomes; where one did,
+    // the first by criterion code would be taken and the grouping would simply
+    // show it once.
+    const outcome = await one(db,
+      `SELECT o.id, o.label, o.module_id, o.sort_key
+         FROM activity_criterion ac
+         JOIN criterion c ON c.id = ac.criterion_id
+         JOIN outcome o ON o.id = c.outcome_id
+        WHERE ac.activity_id = ? ORDER BY c.code LIMIT 1`,
+      [activity.id])
+
     out.push({
       id: activity.id,
       label: activity.label,
@@ -196,6 +208,7 @@ route('GET', '/api/activities', async ({ db, url }) => {
       language: activity.language,
       aiVulnerability: activity.ai_vulnerability,
       criteria: codes.map((r) => r.code),
+      outcome,
       materialisedLevel: context ? context.effective_level : null,
       effectiveLevel: live.level,
       rule: live.rule,

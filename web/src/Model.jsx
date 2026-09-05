@@ -18,7 +18,7 @@ export default function Model () {
   if (error) return <div className="note note-bad"><p>{error}</p></div>
 
   return (
-    <>
+    <div className="console">
       <h2 style={{ marginTop: 0 }}>The model behind the platform</h2>
       <p className="lede">
         Nothing on this page is written into the interface. All of it is read
@@ -76,9 +76,9 @@ export default function Model () {
                   {LEVELS.map((l) => (
                     <td key={l}>
                       {e.levels[l] === 'supports' &&
-                        <span className="badge badge-good">supports</span>}
+                        <span className="chip chip--good">supports</span>}
                       {e.levels[l] === 'contraindicated' &&
-                        <span className="badge badge-bad">against</span>}
+                        <span className="chip chip--bad">against</span>}
                       {!e.levels[l] && <span className="visually-hidden">no verdict</span>}
                     </td>
                   ))}
@@ -122,6 +122,6 @@ export default function Model () {
           </table>
         </div>
       </section>
-    </>
+    </div>
   )
 }

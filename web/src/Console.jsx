@@ -76,7 +76,7 @@ export default function Console ({ learner, activityId }) {
   if (error) return <div className="note note-bad"><p>{error}</p></div>
 
   return (
-    <>
+    <div className="console">
       <h2 style={{ marginTop: 0 }}>Design console</h2>
       <p className="lede">
         The model proposes a design for every activity at every level it can
@@ -148,11 +148,11 @@ export default function Console ({ learner, activityId }) {
                       <label htmlFor={`el-${e.id}`}>
                         {e.label}{' '}
                         {verdictHere === 'supports' &&
-                          <span className="badge badge-good">supports {level}</span>}
+                          <span className="chip chip--good">supports {level}</span>}
                         {verdictHere === 'contraindicated' &&
-                          <span className="badge badge-bad">contraindicated at {level}</span>}
+                          <span className="chip chip--bad">contraindicated at {level}</span>}
                         {!verdictHere &&
-                          <span className="badge badge-plain">no verdict at {level}</span>}
+                          <span className="chip chip--plain">no verdict at {level}</span>}
                       </label>
                     </div>
                   )
@@ -234,7 +234,7 @@ export default function Console ({ learner, activityId }) {
                   .some((e) => e.dimension_id === d)
                 return (
                   <span key={d} style={{ marginRight: '0.35rem' }}>
-                    <span className={`badge ${covered ? 'badge-good' : 'badge-plain'}`}>
+                    <span className={`chip ${covered ? 'chip--good' : 'chip--plain'}`}>
                       {d}{covered ? '' : ' — absent'}
                     </span>
                   </span>
@@ -280,6 +280,6 @@ export default function Console ({ learner, activityId }) {
           </section>
         </div>
       </div>
-    </>
+    </div>
   )
 }

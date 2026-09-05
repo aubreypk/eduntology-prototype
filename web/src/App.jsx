@@ -19,7 +19,7 @@ function useRoute () {
 }
 
 const NAV = [
-  ['/activities', 'Activities'],
+  ['/activities', 'Play'],
   ['/console', 'Design console'],
   ['/model', 'The model']
 ]
@@ -30,6 +30,7 @@ export default function App () {
   const [learner, setLearner] = useState(() => {
     try { return window.localStorage.getItem('gpo.learner') || '' } catch (e) { return '' }
   })
+  const [progress, setProgress] = useState(null)
   const [error, setError] = useState(null)
   const mainRef = useRef(null)
 
@@ -50,6 +51,13 @@ export default function App () {
       if (learner) window.localStorage.setItem('gpo.learner', learner)
     } catch (ignored) { /* private window, or site data blocked */ }
   }, [learner])
+
+  // Re-read the score whenever the learner changes or the view does, so that
+  // returning from an activity shows what the attempt earned.
+  useEffect(() => {
+    if (!learner) return
+    api.progress(learner).then(setProgress).catch(() => setProgress(null))
+  }, [learner, route])
 
   // Move focus to the heading on a route change, so that a keyboard or screen
   // reader user is not left at the top of the navigation after every click.
@@ -85,6 +93,9 @@ export default function App () {
   }
 
   const current = learners.find((l) => l.id === learner)
+  const solved = progress ? progress.solved : 0
+  const total = progress ? progress.activities : 0
+  const percent = total ? Math.round((solved / total) * 100) : 0
 
   return (
     <>
@@ -94,17 +105,14 @@ export default function App () {
         <div className="masthead-inner">
           <h1 className="brand">
             Eduntology
-            <span>Game elements aligned to learning outcomes, by the model rather than by hand</span>
+            <span>Game elements chosen by the model, not by hand</span>
           </h1>
 
           <nav aria-label="Sections">
             <ul>
               {NAV.map(([href, label]) => (
                 <li key={href}>
-                  <a
-                    href={`#${href}`}
-                    aria-current={route.startsWith(href) ? 'page' : undefined}
-                  >
+                  <a href={`#${href}`} aria-current={route.startsWith(href) ? 'page' : undefined}>
                     {label}
                   </a>
                 </li>
@@ -112,28 +120,56 @@ export default function App () {
             </ul>
           </nav>
 
-          <div style={{ minWidth: '17rem' }}>
-            <label htmlFor="learner-select">
-              Learner <span className="hint">— what each has been taught differs</span>
-            </label>
-            <select
-              id="learner-select"
-              value={learner}
-              onChange={(e) => setLearner(e.target.value)}
-            >
-              {learners.map((l) => (
-                <option key={l.id} value={l.id}>{l.id} — {l.label}</option>
-              ))}
-            </select>
+          <div className="learner-bar">
+            <div style={{ minWidth: '15rem' }}>
+              <label htmlFor="learner-select">
+                Playing as <span className="hint">— what each has been taught differs</span>
+              </label>
+              <select
+                id="learner-select"
+                value={learner}
+                onChange={(e) => setLearner(e.target.value)}
+              >
+                {learners.map((l) => (
+                  <option key={l.id} value={l.id}>{l.id} — {l.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {progress && (
+              <p className="xp" style={{ margin: 0 }}>
+                {progress.points}
+                <small>xp</small>
+                <span className="visually-hidden">
+                  , {solved} of {total} activities solved
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </header>
 
       <main id="main" ref={mainRef} tabIndex={-1}>
         {current && (
-          <p className="lede" style={{ marginBottom: '1rem' }}>
-            <strong>{current.label}.</strong> {current.note}
-          </p>
+          <div className="card card--raised" style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem 2rem',
+              alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ margin: 0, maxWidth: '52ch' }}>
+                <strong>{current.label}.</strong>{' '}
+                <span className="hint">{current.note}</span>
+              </p>
+              {progress && (
+                <div style={{ minWidth: '13rem', flex: 'none' }}>
+                  <span className="stat">
+                    <span className="k">{solved} of {total} solved</span>
+                  </span>
+                  <div className="meter" aria-hidden="true">
+                    <span style={{ width: `${percent}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
         {view}
       </main>

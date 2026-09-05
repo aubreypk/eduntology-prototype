@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
 
 const REWARD_WORDS = {
-  CompletionReward: 'completing the task',
+  CompletionReward: 'finishing the task',
   ProcessReward: 'the steps you take',
   ExplanationReward: 'explaining your answer'
 }
@@ -33,10 +33,7 @@ export default function Activity ({ id, learner }) {
     event.preventDefault()
     setBusy(true)
     api.submit(learner, id, answer)
-      .then((r) => {
-        setResult(r)
-        return api.activity(id, learner)
-      })
+      .then((r) => { setResult(r); return api.activity(id, learner) })
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setBusy(false))
@@ -47,7 +44,17 @@ export default function Activity ({ id, learner }) {
 
   return (
     <>
-      <p><a href="#/activities">Back to the activity list</a></p>
+      <p style={{ marginTop: 0 }}><a href="#/activities">← Back to your activities</a></p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1rem',
+        alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span className={`chip chip-lg chip--${ctx.level}`}>{ctx.level}</span>
+        {data.language && <span className="chip chip--plain">{data.language}</span>}
+        {data.aiVulnerability === 'high' && (
+          <span className="chip chip--warn">AI-vulnerable</span>
+        )}
+      </div>
+
       <h2 style={{ marginTop: 0 }}>{data.label}</h2>
 
       <div className="split">
@@ -55,11 +62,9 @@ export default function Activity ({ id, learner }) {
           {/* --------------------------------------------- the task */}
           <section className="card" aria-labelledby="task-heading">
             <h3 id="task-heading" style={{ marginTop: 0 }}>The task</h3>
-            <p>{data.prompt}</p>
+            <p style={{ fontSize: '1.05rem' }}>{data.prompt}</p>
 
-            {data.code && (
-              <pre><code>{data.code}</code></pre>
-            )}
+            {data.code && <pre><code>{data.code}</code></pre>}
 
             <form onSubmit={submit}>
               {data.kind === 'mcq' && (
@@ -100,7 +105,7 @@ export default function Activity ({ id, learner }) {
                     The output, one line per printed line
                   </label>
                   <textarea
-                    id="trace-input" value={answer}
+                    id="trace-input" value={answer} spellCheck="false"
                     onChange={(e) => setAnswer(e.target.value)}
                   />
                 </>
@@ -108,7 +113,7 @@ export default function Activity ({ id, learner }) {
 
               {data.kind === 'complete' && (
                 <>
-                  <p className="hint" style={{ marginBottom: '0.35rem' }}>
+                  <p className="hint" style={{ marginBottom: '0.5rem' }}>
                     Supply the missing part. The surrounding code is fixed.
                   </p>
                   {data.codeBefore && <pre><code>{data.codeBefore}</code></pre>}
@@ -123,7 +128,7 @@ export default function Activity ({ id, learner }) {
 
               <p style={{ marginBottom: 0 }}>
                 <button type="submit" disabled={busy || answer.trim() === ''}>
-                  {busy ? 'Checking' : 'Submit answer'}
+                  {busy ? 'Checking…' : 'Submit answer'}
                 </button>
               </p>
             </form>
@@ -137,18 +142,22 @@ export default function Activity ({ id, learner }) {
                 className={`note ${result.correct ? 'note-good' : 'note-bad'}`}
                 aria-labelledby="feedback-heading"
               >
-                <h3 id="feedback-heading" style={{ marginTop: 0 }}>
-                  {result.correct ? 'Correct' : 'Not yet'}
-                </h3>
+                <p id="feedback-heading" className="verdict-line" style={{ marginTop: 0 }}>
+                  {result.correct
+                    ? `Correct${result.rewardGiven ? ` · +${result.points} XP` : ''}`
+                    : 'Not yet'}
+                </p>
                 <p>{result.feedback}</p>
                 <p>{result.explanation}</p>
                 <p>
                   {result.rewardGiven
-                    ? <>You earned <strong>{result.points} points</strong> for {REWARD_WORDS[result.rewardBasis]}.</>
-                    : <>No points this time. This activity rewards {REWARD_WORDS[result.rewardBasis]}.</>}
+                    ? <>Those points are for <strong>{REWARD_WORDS[result.rewardBasis]}</strong>,
+                      which is what the model allows this activity to reward.</>
+                    : <>No points this time. This activity rewards{' '}
+                      <strong>{REWARD_WORDS[result.rewardBasis]}</strong>.</>}
                 </p>
                 {result.processesEarned?.length > 0 && (
-                  <p>
+                  <p style={{ marginBottom: 0 }}>
                     Your record now shows that you have met{' '}
                     {result.processesEarned.join(', ')}.
                     {result.levelChanged && (
@@ -164,15 +173,15 @@ export default function Activity ({ id, learner }) {
           </div>
 
           {/* --------------------------------------------- criteria */}
-          <section className="card" aria-labelledby="criteria-heading">
-            <h3 id="criteria-heading" style={{ marginTop: 0 }}>
+          <details className="card">
+            <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
               What this activity is for
-            </h3>
-            <div className="scroll">
+            </summary>
+            <div className="scroll" style={{ marginTop: '1rem' }}>
               <table>
                 <caption>
                   The assessment criteria this activity addresses, quoted from the
-                  study guides.
+                  study guide.
                 </caption>
                 <thead>
                   <tr>
@@ -187,7 +196,7 @@ export default function Activity ({ id, learner }) {
                     <tr key={c.code}>
                       <th scope="row">
                         {c.code}
-                        {c.flag ? <> <span className="badge badge-plain">{c.flag}</span></> : null}
+                        {c.flag ? <> <span className="chip chip--plain">{c.flag}</span></> : null}
                       </th>
                       <td>{c.text}</td>
                       <td>{c.asserted_level}</td>
@@ -197,59 +206,61 @@ export default function Activity ({ id, learner }) {
                 </tbody>
               </table>
             </div>
-          </section>
+          </details>
         </div>
 
         {/* ----------------------------------------------- the model's side */}
         <div>
-          <section className="card" aria-labelledby="level-heading">
+          <section className="card card--raised" aria-labelledby="level-heading">
             <h3 id="level-heading" style={{ marginTop: 0 }}>
-              Why this level
+              Why {ctx.level} for you
             </h3>
-            <p>
-              <span className="badge badge-level">{ctx.level}</span>{' '}
-              <span className="hint">derived by {ctx.rule}</span>
-            </p>
             <p>{ctx.basis}</p>
-            {ctx.materialisedLevel && ctx.materialisedLevel !== ctx.level && (
-              <p className="hint">
-                At build time the model derived {ctx.materialisedLevel} for this
-                pairing. It has changed because this learner has since completed
-                work that the model counts as exposure.
-              </p>
-            )}
+            <p className="hint" style={{ marginBottom: 0 }}>
+              Derived by rule {ctx.rule}.
+              {ctx.materialisedLevel && ctx.materialisedLevel !== ctx.level && (
+                <> The model derived {ctx.materialisedLevel} for this pairing when
+                  the knowledge base was built; it has changed because you have
+                  since done work the model counts as exposure.</>
+              )}
+            </p>
           </section>
 
           {design && (
             <section className="card" aria-labelledby="design-heading">
               <h3 id="design-heading" style={{ marginTop: 0 }}>
-                The gamification this activity is given
+                What this activity gives you
               </h3>
-              <p className="hint">{design.rationale}</p>
+              <p className="hint">
+                Not decoration. Each of these was selected because the model says
+                it suits {ctx.level}.
+              </p>
 
-              <ul className="reasons">
+              <ul className="elements">
                 {design.elements.map((e) => (
-                  <li key={e.element_id}>
-                    <strong>{e.label}</strong>{' '}
-                    <span className="badge badge-plain">{e.dimension_id}</span>
+                  <li className="element" key={e.element_id}>
+                    <span className="element-head">
+                      <span className="element-name">{e.label}</span>
+                      <span className="chip chip--plain">{e.dimension_id}</span>
+                    </span>
                     <p className="why">{e.reason}</p>
                   </li>
                 ))}
               </ul>
 
-              <p style={{ marginBottom: 0 }}>
+              <p style={{ marginTop: '1.1rem', marginBottom: 0 }}>
                 Reward attaches to <strong>{REWARD_WORDS[design.reward_basis]}</strong>.
                 {data.aiVulnerability === 'high' && (
                   <> Rule R5 forbids rewarding completion here, because the artefact
                     this activity asks for can be produced by a generative model
-                    without the learner doing the thinking.</>
+                    without you doing the thinking.</>
                 )}
               </p>
 
               {design.buildTimeViolations?.length > 0 && (
-                <div className="note note-warn" style={{ marginTop: '1rem' }}>
+                <div className="note note-warn" style={{ marginTop: '1.1rem' }}>
                   <p><strong>The validator flagged this design at build time.</strong></p>
-                  <ul>
+                  <ul style={{ marginBottom: 0 }}>
                     {design.buildTimeViolations.map((v, i) => (
                       <li key={i}>{v.rule}: {v.message}</li>
                     ))}
@@ -257,7 +268,7 @@ export default function Activity ({ id, learner }) {
                 </div>
               )}
 
-              <p style={{ marginBottom: 0 }}>
+              <p style={{ marginTop: '1.1rem', marginBottom: 0 }}>
                 <a href={`#/console/${encodeURIComponent(data.id)}`}>
                   Open this design in the console
                 </a>
