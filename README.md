@@ -175,7 +175,23 @@ rather than re-staged.
 
 Rebuild the knowledge base first. The script submits a correct answer, which is
 recorded, so a second run would begin from a solved activity and the "before"
-figures would be wrong.
+figures would be wrong — the learner who should be shown at Apply appears at
+Remember, and the captions the script writes then contradict the pixels.
+
+Then cut the captures down for the page:
+
+```
+py -m pip install pillow
+py docs\crop_figures.py
+```
+
+A full-page capture of a five-thousand-pixel page is the right capture and the
+wrong figure. `docs/crop_figures.py` trims the trailing whitespace, takes a
+stated band from the three captures whose argument sits in one part of a much
+longer page, and writes the results to `docs\screenshots\print\`. The bands
+are named in the script with the reason for each, the originals are untouched,
+and nothing is scaled or retouched — so the crop is reproducible rather than
+staged in an image editor.
 
 ## Light and dark
 

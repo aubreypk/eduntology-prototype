@@ -28,12 +28,13 @@ function englishList (items) {
   return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
 }
 
-async function processLabels (db, ids) {
-  if (ids.length === 0) return []
-  const rows = await db.all(
-    `SELECT label FROM process WHERE id IN (${placeholders(ids.length)}) ORDER BY id`,
-    ids)
-  return rows.map((r) => r.label)
+async function labelMap (db, ids) {
+  if (ids && ids.length === 0) return new Map()
+  const rows = ids
+    ? await db.all(
+      `SELECT id, label FROM process WHERE id IN (${placeholders(ids.length)})`, ids)
+    : await db.all('SELECT id, label FROM process', [])
+  return new Map(rows.map((r) => [r.id, r.label]))
 }
 
 // ---------------------------------------------------------------- R1
@@ -52,12 +53,66 @@ async function processLabels (db, ids) {
  * baseline and ignores completed attempts, which is the state build_kb.py
  * reasoned over. verify_parity.py uses it to compare like with like.
  */
+/**
+ * The decision itself, over data already loaded. Both effectiveLevel and
+ * effectiveLevels call this, so there is one statement of rule R1 in the
+ * platform however the data was fetched, and verify_parity.py puts that one
+ * statement on trial.
+ */
+function decide (required, met, completedIdentical, labelFor) {
+  const unmet = required.filter((p) => !met.has(p))
+
+  if (completedIdentical) {
+    return {
+      level: 'Remember',
+      rule: 'R1c',
+      basis: 'This learner has already completed this activity correctly. ' +
+             'Thompson et al. treat a task already met in the same form as Remember.',
+      required,
+      unmet
+    }
+  }
+
+  if (unmet.length > 0) {
+    return {
+      level: 'Create',
+      rule: 'R1b',
+      basis: `This learner has not met ${englishList(unmet.map(labelFor))}, which the activity ` +
+             'requires. With no taught procedure to apply, the learner must assemble ' +
+             'a solution, which Thompson et al. place at Create.',
+      required,
+      unmet
+    }
+  }
+
+  if (required.length > 0) {
+    return {
+      level: 'Apply',
+      rule: 'R1a',
+      basis: `This learner has met ${englishList(required.map(labelFor))}, so the activity asks for ` +
+             'a taught procedure to be carried out on a problem not previously solved ' +
+             'in this form. Thompson et al. place that at Apply.',
+      required,
+      unmet: []
+    }
+  }
+
+  return {
+    level: 'Apply',
+    rule: 'R1a',
+    basis: "No taught procedure is attached to this activity's criteria.",
+    required: [],
+    unmet: []
+  }
+}
+
 export async function effectiveLevel (db, learnerId, activityId, includeEarned = true) {
   const requiredRows = await db.all(
     `SELECT DISTINCT c.process_id AS process_id
        FROM activity_criterion ac
        JOIN criterion c ON c.id = ac.criterion_id
-      WHERE ac.activity_id = ? AND c.process_id IS NOT NULL`,
+      WHERE ac.activity_id = ? AND c.process_id IS NOT NULL
+      ORDER BY c.process_id`,
     [activityId])
   const required = requiredRows.map((r) => r.process_id)
 
@@ -77,52 +132,57 @@ export async function effectiveLevel (db, learnerId, activityId, includeEarned =
     completedIdentical = done.length > 0
   }
 
-  const unmet = required.filter((p) => !met.has(p))
+  const labels = await labelMap(db, required)
+  return decide(required, met, completedIdentical, (id) => labels.get(id) || id)
+}
 
-  if (completedIdentical) {
-    return {
-      level: 'Remember',
-      rule: 'R1c',
-      basis: 'This learner has already completed this activity correctly. ' +
-             'Thompson et al. treat a task already met in the same form as Remember.',
-      required,
-      unmet
-    }
+/**
+ * Rule R1 for every activity at once.
+ *
+ * The same decision as effectiveLevel, over four queries rather than four per
+ * activity. This is not a micro-optimisation: over a database in the same
+ * process the difference is unmeasurable, but the deployed platform reaches its
+ * database across a network, where one query for each of forty-two activities
+ * is the slowest thing the platform does. Section 5.11 records why it was
+ * written the other way first.
+ */
+export async function effectiveLevels (db, learnerId, includeEarned = true) {
+  const requiredRows = await db.all(
+    `SELECT DISTINCT ac.activity_id AS activity_id, c.process_id AS process_id
+       FROM activity_criterion ac
+       JOIN criterion c ON c.id = ac.criterion_id
+      WHERE c.process_id IS NOT NULL
+      ORDER BY ac.activity_id, c.process_id`, [])
+
+  const metRows = includeEarned
+    ? await db.all('SELECT process_id FROM learner_process WHERE learner_id = ?',
+      [learnerId])
+    : await db.all(
+      "SELECT process_id FROM learner_process WHERE learner_id = ? AND source = 'declared'",
+      [learnerId])
+  const met = new Set(metRows.map((r) => r.process_id))
+
+  const doneRows = includeEarned
+    ? await db.all(
+      'SELECT DISTINCT activity_id FROM attempt WHERE learner_id = ? AND correct = 1',
+      [learnerId])
+    : []
+  const done = new Set(doneRows.map((r) => r.activity_id))
+
+  const labels = await labelMap(db, null)
+  const labelFor = (id) => labels.get(id) || id
+
+  const required = new Map()
+  for (const row of requiredRows) {
+    if (!required.has(row.activity_id)) required.set(row.activity_id, [])
+    required.get(row.activity_id).push(row.process_id)
   }
 
-  if (unmet.length > 0) {
-    const labels = await processLabels(db, unmet)
-    return {
-      level: 'Create',
-      rule: 'R1b',
-      basis: `This learner has not met ${englishList(labels)}, which the activity ` +
-             'requires. With no taught procedure to apply, the learner must assemble ' +
-             'a solution, which Thompson et al. place at Create.',
-      required,
-      unmet
-    }
+  const out = new Map()
+  for (const row of await db.all('SELECT id FROM activity', [])) {
+    out.set(row.id, decide(required.get(row.id) || [], met, done.has(row.id), labelFor))
   }
-
-  if (required.length > 0) {
-    const labels = await processLabels(db, required)
-    return {
-      level: 'Apply',
-      rule: 'R1a',
-      basis: `This learner has met ${englishList(labels)}, so the activity asks for ` +
-             'a taught procedure to be carried out on a problem not previously solved ' +
-             'in this form. Thompson et al. place that at Apply.',
-      required,
-      unmet: []
-    }
-  }
-
-  return {
-    level: 'Apply',
-    rule: 'R1a',
-    basis: "No taught procedure is attached to this activity's criteria.",
-    required: [],
-    unmet: []
-  }
+  return out
 }
 
 // ---------------------------------------------------------------- R2, R3, R5

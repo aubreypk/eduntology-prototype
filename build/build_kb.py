@@ -487,45 +487,45 @@ db.executemany("INSERT INTO validation VALUES (?,?,?,?)",
 
 TRACE = [
     ("gpo:AssessmentCriterion", "class", "criterion table; criterion codes shown on every activity page",
-     "schema.sql, frontend/src/Activity.jsx", "%d rows" % len(criteria)),
+     "build/schema.sql, web/src/Activity.jsx", "%d rows" % len(criteria)),
     ("gpo:LearningActivity", "class", "activity table; the activity list and workspace",
-     "schema.sql, frontend/src/Activity.jsx", "%d rows" % len(activities)),
+     "build/schema.sql, web/src/Activities.jsx", "%d rows" % len(activities)),
     ("gpo:LearnerActivityContext", "class", "context table; one row per learner and activity",
-     "schema.sql", "%d rows" % len(platform_contexts)),
+     "build/schema.sql", "%d rows" % len(platform_contexts)),
     ("gpo:GamifiedActivityDesign", "class", "design and design_element tables; the design console",
-     "schema.sql, frontend/src/Console.jsx", "%d designs" % len(designs)),
+     "build/schema.sql, web/src/Console.jsx", "%d designs" % len(designs)),
     ("gpo:hasEffectiveLevel", "property", "context.effective_level; the level badge on the activity list",
-     "build_kb.py step 4", "R1 derived %s" % derived_counts),
+     "build/build_kb.py step 4", "R1 derived %s" % derived_counts),
     ("gpo:aiVulnerability", "property", "activity.ai_vulnerability; drives the reward basis",
-     "backend/design.py REWARD_FOR", "%d high, %d medium, %d low"
+     "build/design.py REWARD_FOR", "%d high, %d medium, %d low"
      % (sum(1 for a in activities if a["aiVulnerability"] == "high"),
         sum(1 for a in activities if a["aiVulnerability"] == "medium"),
         sum(1 for a in activities if a["aiVulnerability"] == "low"))),
     ("gpo:supportsLevel / gpo:contraindicatedFor", "property",
      "element_level table; the reason shown beside every element in the console",
-     "schema.sql, backend/rules.py", "%d entries" % len(matrix)),
+     "build/schema.sql, api/src/rules.js", "%d entries" % len(matrix)),
     ("R1 effective cognitive level", "rule",
-     "materialised at build time; re-derived at run time by rules.effective_level for parity testing",
-     "ontology/gpo-r1-materialise.rq, backend/rules.py", "%d contexts" % len(platform_contexts)),
+     "materialised at build time; re-derived at run time by rules.effectiveLevel for parity testing",
+     "model/r1-effective-level.rq, api/src/rules.js", "%d contexts" % len(platform_contexts)),
     ("R2 element suitability", "rule", "checked live in the design console",
-     "backend/rules.py check_r2", "permissive reading; %d contraindication entries"
+     "api/src/rules.js checkR2", "permissive reading; %d contraindication entries"
      % sum(1 for v in matrix.values() if v == "contraindicated")),
     ("R3 dimension balance", "rule", "checked live in the design console",
-     "backend/rules.py check_r3", "three dimensions, one Personal, one Measurement"),
+     "api/src/rules.js checkR3", "three dimensions, one Personal, one Measurement"),
     ("R5 AI vulnerability", "rule", "checked live in the design console; sets the reward basis",
-     "backend/rules.py check_r5", "%d activities at high vulnerability"
+     "api/src/rules.js checkR5", "%d activities at high vulnerability"
      % sum(1 for a in activities if a["aiVulnerability"] == "high")),
     ("DR1 educational taxonomy", "requirement", "Toda et al. elements loaded from the ontology",
-     "build_kb.py step 2", "%d elements in %d dimensions" % (len(elements), len(dimensions))),
+     "build/build_kb.py step 2", "%d elements in %d dimensions" % (len(elements), len(dimensions))),
     ("DR2 formal learning outcomes", "requirement", "criteria taken from the study guides, not invented",
-     "content/activities.json", "%d criteria addressed by activities"
+     "curriculum/%s/activities.json" % CURRICULUM, "%d criteria addressed by activities"
      % len({c for a in activities for c in a["criteria"]})),
     ("DR3 derived rather than asserted level", "requirement",
      "no effective level is written by hand anywhere in the codebase",
-     "build_kb.py step 4", "every one of %d contexts derived" % len(platform_contexts)),
+     "build/build_kb.py step 4", "every one of %d contexts derived" % len(platform_contexts)),
     ("DR4 automated evaluation", "requirement",
      "check_content.py, verify_parity.py and build_report.json run without a human",
-     "backend/", "no participant data is collected"),
+     "build/", "no participant data is collected"),
 ]
 db.executemany("INSERT INTO traceability VALUES (?,?,?,?,?)", TRACE)
 

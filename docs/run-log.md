@@ -298,18 +298,24 @@ Do not take these by hand. `docs/screenshots.mjs` drives the real interface
 through the real API and writes numbered PNGs with captions, so a figure can be
 regenerated after any change rather than re-staged.
 
-Rebuild the knowledge base first — the script submits a correct answer, and a
-second run would otherwise start from a solved activity.
+**Rebuild the knowledge base first, every time.** The script submits a correct
+answer, and that attempt is recorded. On a second run rule R1c has already
+fired, so the learner who should be at Apply is shown at Remember and the
+figures contradict their own captions. This has happened once already; it is
+not hypothetical, and it is not visible unless you read the figures.
 
 ```
 py build\build_kb.py --curriculum tut
 cd web
 npm install -D playwright
-npx playwright install chromium
 npm run build
 cd ..
 node api\dev-server.mjs
 ```
+
+No browser download is needed. `npx playwright install chromium` fetches one
+from a CDN that many university networks block; the script uses the Edge or
+Chrome already on the machine instead, and says which in `FIGURES.md`.
 
 then, in a second window:
 
@@ -317,18 +323,26 @@ then, in a second window:
 npm run figures -- --base http://127.0.0.1:8000 --activity ACT_D2_01
 ```
 
-Figures come out in the light palette, which is what prints. Add
-`--theme dark` for the authored palette if a figure is about the look rather
-than the content.
-
-`--activity` pins the figure to the criterion Chapter 4 discusses by name.
-Without it the script takes the first code-completion activity resting on a
-Thompson-flagged criterion — a fair demonstration, but not the one the text
-names.
+Figures come out in the light palette, which is what prints.
 
 - [ ] `docs\screenshots\` holds the PNGs and `FIGURES.md`
+- [ ] `FIGURES.md` names the browser used and the viewport
 - [ ] the two list figures show the same activities at different levels
+- [ ] **the activity figures show Create and then Apply** — if the second says
+      Remember, the knowledge base was not rebuilt; rebuild and run again
 - [ ] the two activity figures show different game elements for the same task
+
+Then cut them down for the page. A full-page capture of a long page is the
+right capture and the wrong figure: placed whole on A4 it would be scaled to a
+width at which the text cannot be read. The crop is scripted so that it is
+reproducible from the originals, which stay where they are.
+
+```
+py -m pip install pillow
+py docs\crop_figures.py
+```
+
+- [ ] `docs\screenshots\print\` holds the cropped figures
 
 Rebuild the knowledge base afterwards, so Chapter 6 measures a clean database:
 

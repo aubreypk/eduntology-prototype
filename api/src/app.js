@@ -172,51 +172,68 @@ route('GET', '/api/activities', async ({ db, url }) => {
     return fail(404, `No such learner: ${learner}`)
   }
 
+  // Everything this route needs, in a fixed number of queries rather than a
+  // number that grows with the corpus. The first version asked per activity,
+  // which is invisible over a database in the same process and is the slowest
+  // path in the platform over one reached across a network.
   const activities = await db.all('SELECT * FROM activity ORDER BY id', [])
-  const out = []
-  for (const activity of activities) {
-    const context = await one(db,
-      'SELECT * FROM context WHERE learner_id = ? AND activity_id = ?',
-      [learner, activity.id])
-    const live = await rules.effectiveLevel(db, learner, activity.id)
-    const done = await one(db,
-      `SELECT COUNT(*) AS n, MAX(correct) AS best FROM attempt
-        WHERE learner_id = ? AND activity_id = ?`,
-      [learner, activity.id])
-    const codes = await db.all(
-      `SELECT c.code FROM activity_criterion ac
-         JOIN criterion c ON c.id = ac.criterion_id
-        WHERE ac.activity_id = ? ORDER BY c.code`,
-      [activity.id])
+  const levels = await rules.effectiveLevels(db, learner)
 
+  const contexts = new Map()
+  for (const row of await db.all(
+    'SELECT activity_id, effective_level FROM context WHERE learner_id = ?', [learner])) {
+    contexts.set(row.activity_id, row.effective_level)
+  }
+
+  const attempts = new Map()
+  for (const row of await db.all(
+    `SELECT activity_id, COUNT(*) AS n, MAX(correct) AS best FROM attempt
+      WHERE learner_id = ? GROUP BY activity_id`, [learner])) {
+    attempts.set(row.activity_id, row)
+  }
+
+  const codes = new Map()
+  const outcomes = new Map()
+  for (const row of await db.all(
+    `SELECT ac.activity_id, c.code, o.id AS outcome_id, o.label AS outcome_label,
+            o.module_id, o.sort_key
+       FROM activity_criterion ac
+       JOIN criterion c ON c.id = ac.criterion_id
+       JOIN outcome o ON o.id = c.outcome_id
+      ORDER BY ac.activity_id, c.code`, [])) {
+    if (!codes.has(row.activity_id)) codes.set(row.activity_id, [])
+    codes.get(row.activity_id).push(row.code)
     // The outcome the activity sits under, so that the interface can group by
     // it. No activity in either curriculum spans two outcomes; where one did,
-    // the first by criterion code would be taken and the grouping would simply
-    // show it once.
-    const outcome = await one(db,
-      `SELECT o.id, o.label, o.module_id, o.sort_key
-         FROM activity_criterion ac
-         JOIN criterion c ON c.id = ac.criterion_id
-         JOIN outcome o ON o.id = c.outcome_id
-        WHERE ac.activity_id = ? ORDER BY c.code LIMIT 1`,
-      [activity.id])
+    // the first by criterion code is taken and the grouping shows it once.
+    if (!outcomes.has(row.activity_id)) {
+      outcomes.set(row.activity_id, {
+        id: row.outcome_id,
+        label: row.outcome_label,
+        module_id: row.module_id,
+        sort_key: row.sort_key
+      })
+    }
+  }
 
-    out.push({
+  return json(activities.map((activity) => {
+    const live = levels.get(activity.id)
+    const done = attempts.get(activity.id)
+    return {
       id: activity.id,
       label: activity.label,
       kind: activity.kind,
       language: activity.language,
       aiVulnerability: activity.ai_vulnerability,
-      criteria: codes.map((r) => r.code),
-      outcome,
-      materialisedLevel: context ? context.effective_level : null,
+      criteria: codes.get(activity.id) || [],
+      outcome: outcomes.get(activity.id) || null,
+      materialisedLevel: contexts.has(activity.id) ? contexts.get(activity.id) : null,
       effectiveLevel: live.level,
       rule: live.rule,
       attempts: done ? done.n : 0,
       solved: Boolean(done && done.best)
-    })
-  }
-  return json(out)
+    }
+  }))
 })
 
 route('GET', '/api/activities/:id', async ({ db, url, params }) => {

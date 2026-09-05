@@ -62,6 +62,12 @@ jobs:
       - name: Test the API
         run: node api/test/run-tests.mjs
 
+      # The activity list asks rule R1 for every activity at once and the
+      # activity page asks for one. Both call the same decision; this checks
+      # that the two ways of loading the data for it never disagree.
+      - name: Do the two paths through rule R1 agree?
+        run: node api/test/rule-r1-bulk.mjs
+
       - name: Does the deployed JavaScript agree with pySHACL?
         run: python build/verify_parity.py --curriculum example
 
@@ -186,6 +192,73 @@ jobs:
             exit 1
           fi
           echo "D1 reachable."
+
+
+      # The workflow builds from curriculum/example, because the departmental
+      # material is not in this repository. Seeding replaces every table, so a
+      # seed run against a database that holds the real curriculum would quietly
+      # substitute the invented one for it -- and the deployed platform would go
+      # on working, which is what makes it dangerous. Ask the database what it
+      # holds before overwriting it.
+      - name: Refuse to seed over a different curriculum
+        if: steps.creds.outputs.ready == 'true' && inputs.seed
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          DB_NAME="${{ steps.d1check.outputs.db_name }}"
+          if ! npx --yes wrangler@4 d1 execute "$DB_NAME" --remote --yes --json \
+                 --command "SELECT value FROM build_meta WHERE key = 'curriculum'" \
+                 > held.json 2> held.err; then
+            echo "No readable build record in $DB_NAME -- treating it as empty and seeding."
+            cat held.err || true
+            exit 0
+          fi
+          HELD=$(node -e "
+            const fs = require('fs')
+            let held = ''
+            try {
+              const out = JSON.parse(fs.readFileSync('held.json', 'utf8'))
+              const rows = (Array.isArray(out) ? out : [out]).flatMap((r) => r.results || [])
+              held = rows.length ? String(rows[0].value) : ''
+            } catch (e) { held = '?' }
+            process.stdout.write(held)
+          ")
+          if [ "$HELD" = "example" ]; then
+            echo "The deployed database holds the example curriculum. Seeding is safe."
+            exit 0
+          fi
+          if [ -z "$HELD" ]; then
+            echo "The deployed database has a build record but no curriculum in it. Seeding."
+            exit 0
+          fi
+          if [ "$HELD" = "?" ]; then
+            echo "::error::Could not read the deployed database's build record. Refusing to seed rather than guessing."
+            cat held.json || true
+            exit 1
+          fi
+          {
+            echo "### Seeding refused"
+            echo ""
+            echo "The deployed database holds the **$HELD** curriculum, and this workflow"
+            echo "builds from **example**. Seeding would replace the real curriculum with"
+            echo "the invented one."
+            echo ""
+            echo "Nothing was changed. Re-run the workflow without **seed** to deploy"
+            echo "the Worker on its own."
+            echo ""
+            echo "To re-seed from the real curriculum, do it from the machine that has it:"
+            echo ""
+            echo '```'
+            echo "python build\\build_kb.py --curriculum $HELD"
+            echo "cd api"
+            echo "npx wrangler login"
+            echo "npx wrangler d1 execute $DB_NAME --remote --file=..\\build\\d1-seed.sql"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Refused to seed: the deployed database holds the '$HELD' curriculum, not 'example'."
+          exit 1
 
       - name: Seed the remote database
         if: steps.creds.outputs.ready == 'true' && inputs.seed

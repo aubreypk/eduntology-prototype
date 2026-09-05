@@ -7,7 +7,8 @@
   "scripts": {
     "figures": "node docs/screenshots.mjs",
     "test:api": "node api/test/run-tests.mjs",
-    "api": "node api/dev-server.mjs"
+    "api": "node api/dev-server.mjs",
+    "test:r1": "node api/test/rule-r1-bulk.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0"
