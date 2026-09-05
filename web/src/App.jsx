@@ -142,16 +142,66 @@ export default function App () {
 
       <header className="masthead">
         <div className="masthead-inner">
-          <h1 className="brand">
-            Eduntology
-            <span>
-              {student
-                ? 'Game elements chosen by the model, not by hand'
-                : 'What the model decided for each learner, and why'}
-            </span>
-          </h1>
+          {/* Row one: who you are. Row two: where you can go. Kept apart
+              because the lecturer has four destinations and they will not
+              share a line with the identity controls at usable widths. */}
+          <div className="masthead-top">
+            <h1 className="brand">
+              Eduntology
+              <span>
+                {student
+                  ? 'Game elements chosen by the model, not by hand'
+                  : 'What the model decided for each learner, and why'}
+              </span>
+            </h1>
 
-          <nav aria-label="Sections">
+            <div className="identity">
+              <div className="roles" role="group" aria-label="Point of view">
+                <button
+                  type="button" aria-pressed={student}
+                  onClick={() => setRole('student')}
+                >
+                  Student
+                </button>
+                <button
+                  type="button" aria-pressed={!student}
+                  onClick={() => setRole('lecturer')}
+                >
+                  Lecturer
+                </button>
+              </div>
+
+              <div className="learner-field">
+                <label htmlFor="learner-select">
+                  {student ? 'Signed in as' : 'Viewing as'}{' '}
+                  <span className="hint">
+                    {student ? '— stands in for a login' : '— taught different amounts'}
+                  </span>
+                </label>
+                <select
+                  id="learner-select"
+                  value={learner}
+                  onChange={(e) => setLearner(e.target.value)}
+                >
+                  {learners.map((l) => (
+                    <option key={l.id} value={l.id}>{l.id} — {l.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {student && progress && (
+                <p className="xp" style={{ margin: 0 }}>
+                  {progress.points}
+                  <small>xp</small>
+                  <span className="visually-hidden">
+                    , {solved} of {total} activities solved
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <nav className="masthead-nav" aria-label="Sections">
             <ul>
               {NAV[role].map(([href, label]) => (
                 <li key={href}>
@@ -171,51 +221,6 @@ export default function App () {
               ))}
             </ul>
           </nav>
-
-          <div className="learner-bar">
-            <div className="roles" role="group" aria-label="Point of view">
-              <button
-                type="button" aria-pressed={student}
-                onClick={() => setRole('student')}
-              >
-                Student
-              </button>
-              <button
-                type="button" aria-pressed={!student}
-                onClick={() => setRole('lecturer')}
-              >
-                Lecturer
-              </button>
-            </div>
-
-            <div style={{ minWidth: '15rem' }}>
-              <label htmlFor="learner-select">
-                {student ? 'Signed in as' : 'Viewing as'}{' '}
-                <span className="hint">
-                  {student ? '— stands in for a login' : '— what each has been taught differs'}
-                </span>
-              </label>
-              <select
-                id="learner-select"
-                value={learner}
-                onChange={(e) => setLearner(e.target.value)}
-              >
-                {learners.map((l) => (
-                  <option key={l.id} value={l.id}>{l.id} — {l.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {student && progress && (
-              <p className="xp" style={{ margin: 0 }}>
-                {progress.points}
-                <small>xp</small>
-                <span className="visually-hidden">
-                  , {solved} of {total} activities solved
-                </span>
-              </p>
-            )}
-          </div>
         </div>
       </header>
 

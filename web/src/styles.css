@@ -99,13 +99,24 @@ a:hover { color: #adc2ff; }
   top: 0;
   z-index: 10;
 }
+/* Two rows, not one. Who you are sits on the top row and where you are going
+   on the second, because the lecturer view has four destinations as well as a
+   role switch, a learner picker and an identity, and one row of that either
+   overflows or wraps into a mess at exactly the widths people use. Splitting it
+   means neither row has enough in it to break. */
 .masthead-inner {
   max-width: 1180px;
   margin: 0 auto;
   display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.masthead-top {
+  display: flex;
   flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  align-items: center;
+  gap: 0.9rem 1.5rem;
+  align-items: flex-end;
   justify-content: space-between;
 }
 
@@ -115,6 +126,8 @@ a:hover { color: #adc2ff; }
   letter-spacing: -0.02em;
   margin: 0;
   line-height: 1.15;
+  flex: 1 1 14rem;
+  min-width: 0;
 }
 .brand span {
   display: block;
@@ -122,11 +135,32 @@ a:hover { color: #adc2ff; }
   font-weight: 400;
   letter-spacing: 0;
   color: var(--ink-dim);
-  max-width: 34ch;
+  max-width: 38ch;
   margin-top: 0.2rem;
 }
 
-nav ul { list-style: none; display: flex; gap: 0.3rem; margin: 0; padding: 0; }
+/* Role switch, learner picker and score. Bottom-aligned so the select sits on
+   the same baseline as the pills beside it, whose label is above them. */
+.identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.1rem;
+}
+.learner-field { flex: 0 1 21rem; min-width: 12rem; }
+
+.masthead-nav {
+  border-top: 1px solid var(--line);
+  padding-top: 0.7rem;
+}
+nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+}
 nav a {
   display: block;
   padding: 0.55rem 1rem;
@@ -135,11 +169,19 @@ nav a {
   color: var(--ink-soft);
   font-weight: 600;
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 nav a:hover { background: var(--raised); color: var(--ink); }
 nav a[aria-current="page"] {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+/* Narrow screens: the header is already tall, so let it scroll away rather
+   than eat a third of a phone. */
+@media (max-width: 700px) {
+  .masthead { position: static; }
+  .brand span { display: none; }
 }
 
 main { max-width: 1180px; margin: 0 auto; padding: 1.75rem 1.25rem 5rem; }
@@ -188,8 +230,6 @@ h3 { font-size: 1.1rem; font-weight: 700; margin: 1.4rem 0 0.5rem; }
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-
-.learner-bar { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
 
 .xp {
   display: flex;
