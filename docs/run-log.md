@@ -314,7 +314,7 @@ node api\dev-server.mjs
 then, in a second window:
 
 ```
-node docs\screenshots.mjs --base http://127.0.0.1:8000
+npm run figures -- --base http://127.0.0.1:8000
 ```
 
 - [ ] `docs\screenshots\` holds the PNGs and `FIGURES.md`

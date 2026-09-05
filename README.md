@@ -140,12 +140,17 @@ a full attempt moving an activity to Remember by rule R1c.
 
 ## Figures for the write-up
 
+From the **repository root**, not from `web`:
+
 ```
-cd web
-npm install -D playwright
-cd ..
-node docs\screenshots.mjs --base http://127.0.0.1:8000
+npm install
+npm run figures -- --base http://127.0.0.1:8000
 ```
+
+Playwright is a devDependency of the repository rather than of the interface.
+Node resolves `node_modules` by walking up from the importing file, so a copy
+installed under `web` would never be found by a script in `docs` — and it does
+not belong in the interface's dependency list, which the Layer 2 audit reads.
 
 There is no browser to download. `npx playwright install chromium` fetches one
 from `cdn.playwright.dev`, which many university networks block; the script

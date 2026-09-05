@@ -1,0 +1,18 @@
+{
+  "name": "eduntology-prototype",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Tooling that belongs to the repository rather than to any one part of it.",
+  "scripts": {
+    "figures": "node docs/screenshots.mjs",
+    "test:api": "node api/test/run-tests.mjs",
+    "api": "node api/dev-server.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}
