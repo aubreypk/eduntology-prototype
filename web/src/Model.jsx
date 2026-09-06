@@ -30,7 +30,7 @@ export default function Model () {
       {meta && (
         <section className="card" aria-labelledby="build-heading">
           <h3 id="build-heading" style={{ marginTop: 0 }}>The last build</h3>
-          <div className="scroll">
+          <div className="scroll" tabIndex={0} role="region" aria-labelledby="build-heading">
             <table>
               <caption>
                 Written by <code>build_kb.py</code>. The platform does no
@@ -54,7 +54,7 @@ export default function Model () {
         <h3 id="matrix-heading" style={{ marginTop: 0 }}>
           Element suitability by cognitive level
         </h3>
-        <div className="scroll">
+        <div className="scroll" tabIndex={0} role="region" aria-labelledby="matrix-heading">
           <table>
             <caption>
               The alignment the model asserts. A blank cell is neither support
@@ -93,7 +93,7 @@ export default function Model () {
         <h3 id="trace-heading" style={{ marginTop: 0 }}>
           Model element to implemented feature
         </h3>
-        <div className="scroll">
+        <div className="scroll" tabIndex={0} role="region" aria-labelledby="trace-heading">
           <table>
             <caption>
               Generated during the build, so it cannot drift from the code it
