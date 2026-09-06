@@ -287,6 +287,14 @@ async function main () {
 
   await page.getByRole('link', { name: 'Curriculum' }).click()
   await page.waitForTimeout(500)
+  // Open the first outcome. Collapsed, the page shows the profile and the
+  // outcome headings and no criterion at all, which is not what a figure
+  // captioned "the curriculum as the platform holds it" should show.
+  const firstOutcome = page.locator('details summary').first()
+  if (await firstOutcome.count()) {
+    await firstOutcome.click()
+    await page.waitForTimeout(400)
+  }
   await shot(page, 'curriculum',
     'The curriculum the model is grounded in, read back out of the knowledge base: every outcome and criterion as the study guide states it, with its classification and flag.')
 
