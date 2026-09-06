@@ -21,17 +21,14 @@
 #
 # What is deliberately NOT touched
 # --------------------------------
-#   D.2.5, A.1.5   a program IS created, so the process link is sound; it is the
-#                  asserted Evaluate that is in question. A classification
-#                  decision, not an encoding one. A.1.5 also repeats D.2.5.
-#   B.2.7          the study guide conflates exemplifying a difference with
-#                  writing a program. Split it or classify it, but do not
-#                  silently drop the link.
 #   D.1.9          drawing flowchart symbols is genuinely a procedure AND the
 #                  level is genuinely Understand. This is the real counter-
 #                  example to R1 as Section 4.4.4 states it, and it should
 #                  survive into Chapter 6 rather than be tidied away.
-#   E.1.21         tracing consequences; readable at Understand or Analyse.
+#
+# Three further criteria have the opposite problem -- the process link is sound
+# and the level is not -- and are reclassified rather than unlinked. They are
+# listed in RECLASSIFY below with the reason for each.
 #
 # The change is reversible through git, and re-running build_kb.py reports the
 # effect.
@@ -57,10 +54,38 @@ TOPIC_TAGGED = {
     "E.1.17": "The bubble sort technique is explained",
     "E.1.19": "The pass-by-value concept is explained",
     "E.1.20": "The pass-by-reference concept is explained",
+    "E.1.21": "A determination is made of what happens to an array passed to a method",
 }
+
+# Criteria where the process link is sound and the classification is not. Each
+# names an artefact the learner produces, so a procedure genuinely is carried
+# out; the recorded level describes the purpose of the task rather than the act
+# assessed. The coding notes in the classification workbook anticipate all three.
+RECLASSIFY = {
+    "D.2.5": ("Evaluate", "Apply",
+              "'A safely modifiable program IS CREATED'. The safe pattern is "
+              "taught, so this is a taught procedure carried out on a new "
+              "problem. Your own note: 'Apply if a safe pattern was taught "
+              "explicitly.'"),
+    "A.1.5": ("Evaluate", "Apply",
+              "Repeat of D.2.5 in the second module. Same reasoning; kept "
+              "because the outcome revisits selection."),
+    "B.2.7": ("Understand", "Apply",
+              "'...demonstrated by WRITING A JAVA PROGRAM that outputs correct "
+              "results for both'. The criterion cannot be satisfied without "
+              "writing code, and the assessed act is what governs the level."),
+}
+
+# Left exactly as it stands, deliberately:
+#   D.1.9  drawing flowchart symbols is a procedure AND Thompson places
+#          translation between representations at Understand. Both assertions
+#          are sound and R1 cannot hold them at once. This is the one genuine
+#          counter-example to rule R1 in eighty-two criteria, and Chapter 6
+#          reports it rather than tidying it away.
 
 CODE = re.compile(r'gpo:criterionCode\s+"([^"]+)"')
 REQUIRES = re.compile(r'^\s*gpo:requiresProcess\s+\S+\s*([;.])\s*$')
+LEVEL = re.compile(r'^(\s*gpo:atCognitiveLevel\s+gpo:)(\w+)(\s*[;.]\s*)$')
 
 
 def blocks(text):
@@ -95,25 +120,48 @@ def main():
     lines = text.split("\n")
     remove = []
 
+    relevel = []
     for start, end in blocks(text):
         block = "\n".join(lines[start:end + 1])
         found = CODE.search(block)
-        if not found or found.group(1) not in TOPIC_TAGGED:
+        if not found:
             continue
-        for i in range(start, end + 1):
-            if REQUIRES.match(lines[i]):
-                remove.append((found.group(1), i, lines[i].strip()))
-                break
+        code = found.group(1)
+        if code in TOPIC_TAGGED:
+            for i in range(start, end + 1):
+                if REQUIRES.match(lines[i]):
+                    remove.append((code, i, lines[i].strip()))
+                    break
+        elif code in RECLASSIFY:
+            was, becomes, _why = RECLASSIFY[code]
+            for i in range(start, end + 1):
+                match = LEVEL.match(lines[i])
+                if match:
+                    if match.group(2) != was:
+                        print("   MISMATCH: %s is at %s, expected %s. Left alone."
+                              % (code, match.group(2), was))
+                    else:
+                        relevel.append((code, i, becomes))
+                    break
 
     seen = {code for code, _, _ in remove}
-    for code in sorted(TOPIC_TAGGED):
-        if code not in seen:
-            print("   NOT FOUND: %s has no gpo:requiresProcess to remove" % code)
+    already = [c for c in sorted(TOPIC_TAGGED) if c not in seen]
+    if already:
+        print("No process link to remove (already removed, or never carried one):")
+        print("   %s" % ", ".join(already))
+        print()
 
     print("%d of %d criteria carry a process link to remove:" % (len(remove), len(TOPIC_TAGGED)))
     for code, i, statement in sorted(remove):
         print("   %-8s line %-5d %s" % (code, i + 1, statement))
         print("            %s" % TOPIC_TAGGED[code])
+    print()
+
+    print("%d of %d criteria to reclassify:" % (len(relevel), len(RECLASSIFY)))
+    for code, i, becomes in sorted(relevel):
+        was, _b, why = RECLASSIFY[code]
+        print("   %-8s line %-5d %s -> %s" % (code, i + 1, was, becomes))
+        print("            %s" % why)
     print()
 
     if not args.write:
@@ -125,8 +173,13 @@ def main():
     # Removing a line that terminated its block leaves the previous predicate
     # ending in ';', which is not valid Turtle. Repair it.
     drop = {i for _, i, _ in remove}
+    change = {i: becomes for _, i, becomes in relevel}
     out = []
     for i, line in enumerate(lines):
+        if i in change:
+            match = LEVEL.match(line)
+            out.append(match.group(1) + change[i] + match.group(3))
+            continue
         if i in drop:
             terminator = REQUIRES.match(line).group(1)
             if terminator == "." and out:
@@ -138,7 +191,8 @@ def main():
         out.append(line)
 
     open(path, "w", encoding="utf-8").write("\n".join(out))
-    print("Removed %d statements from %s" % (len(remove), path))
+    print("Removed %d process links and reclassified %d criteria in %s"
+          % (len(remove), len(relevel), path))
     print()
     print("Now rebuild and re-measure:")
     print("   python build\\build_kb.py --curriculum %s" % name)

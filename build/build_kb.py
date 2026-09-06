@@ -228,11 +228,11 @@ for chunk in re.split(r"(?m)^(?=CONSTRUCT)", r1_source):
     if not chunk.startswith("CONSTRUCT"):
         continue
     end = chunk.rfind("}")
-    name = "R1" + "abc"[len(R1_QUERIES)]
+    name = "R1" + "abcd"[len(R1_QUERIES)]
     R1_QUERIES[name] = prefix_line + chunk[:end + 1]
 
-if len(R1_QUERIES) != 3:
-    sys.exit("Expected three CONSTRUCT queries in gpo-r1-materialise.rq, found %d."
+if len(R1_QUERIES) != 4:
+    sys.exit("Expected four CONSTRUCT queries in the R1 file, found %d."
              % len(R1_QUERIES))
 
 derived_counts = {}

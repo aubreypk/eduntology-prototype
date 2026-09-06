@@ -63,3 +63,32 @@ WHERE {
           gpo:forActivity ?activity .
     ?learner gpo:hasCompletedIdentical ?activity .
 }
+
+# ------------------------------------------------------------
+#  R1d  THE ASSERTED LEVEL STANDS
+#  Where a criterion requires no procedure to be carried out,
+#  procedural familiarity has nothing to say about it, and the
+#  level the curriculum asserts is the level. Thompson et al.
+#  relativise the level of a task to what the learner has been
+#  taught to DO; a criterion satisfied by an explanation is not
+#  such a task, and R1a and R1b cannot fire on it because both
+#  require a process.
+#
+#  Without this branch an activity whose criteria are all of
+#  that kind receives no level at all, and the platform has
+#  nothing to gamify it against. With it, the six levels are
+#  all reachable: the three R1 derives, and the others where
+#  the curriculum asserts them and the rule is silent.
+#
+#  The activity's level remains the highest of those derived
+#  for its criteria, which is the reading already taken where
+#  R1 produces more than one.
+# ------------------------------------------------------------
+CONSTRUCT { ?ctx gpo:hasEffectiveLevel ?level }
+WHERE {
+    ?ctx  gpo:forLearner  ?learner ;
+          gpo:forActivity ?activity .
+    ?activity  gpo:addressesCriterion ?criterion .
+    ?criterion gpo:atCognitiveLevel ?level .
+    FILTER NOT EXISTS { ?criterion gpo:requiresProcess ?anyProcess }
+}

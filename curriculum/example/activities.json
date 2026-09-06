@@ -13,85 +13,146 @@
     "for a short answer, low for ordering or recognition. Rule R5 bars",
     "completion-based reward at high."
   ],
-
   "activities": [
-
-    { "id": "EX_A1_01",
+    {
+      "id": "EX_A1_01",
       "label": "Name the arithmetic operators",
-      "criteria": ["A.1.1"],
-      "language": "python", "kind": "mcq", "aiVulnerability": "low",
+      "criteria": [
+        "A.1.1"
+      ],
+      "language": "python",
+      "kind": "mcq",
+      "aiVulnerability": "low",
       "prompt": "Which set contains only arithmetic operators?",
-      "options": ["+  -  *  /", "+  <  *  =", "and  or  not", "==  !=  <="],
+      "options": [
+        "+  -  *  /",
+        "+  <  *  =",
+        "and  or  not",
+        "==  !=  <="
+      ],
       "answer": "0",
-      "explanation": "The second set mixes in a comparison and an assignment, the third is logical, and the fourth is entirely relational." },
-
-    { "id": "EX_A1_02",
+      "explanation": "The second set mixes in a comparison and an assignment, the third is logical, and the fourth is entirely relational."
+    },
+    {
+      "id": "EX_A1_02",
       "label": "Integer division against real division",
-      "criteria": ["A.1.2"],
-      "language": "python", "kind": "trace", "aiVulnerability": "medium",
+      "criteria": [
+        "A.1.2"
+      ],
+      "language": "python",
+      "kind": "trace",
+      "aiVulnerability": "medium",
       "prompt": "What does this fragment print? Give one line of output per line.",
       "code": "print(7 // 2)\nprint(7 / 2)",
       "answer": "3\n3.5",
-      "verify": { "python": "print(7 // 2)\nprint(7 / 2)" },
-      "explanation": "// discards the fractional part and yields an integer; / always yields a real number, even when the division is exact." },
-
-    { "id": "EX_A1_03",
+      "verify": {
+        "python": "print(7 // 2)\nprint(7 / 2)"
+      },
+      "explanation": "// discards the fractional part and yields an integer; / always yields a real number, even when the division is exact."
+    },
+    {
+      "id": "EX_A1_03",
       "label": "Combine two operators in one expression",
-      "criteria": ["A.1.3"],
-      "language": "python", "kind": "complete", "aiVulnerability": "high",
+      "criteria": [
+        "A.1.3"
+      ],
+      "language": "python",
+      "kind": "complete",
+      "aiVulnerability": "high",
       "prompt": "Supply the expression that gives the average of the three marks.",
       "codeBefore": "a, b, c = 61, 74, 55\naverage = ",
       "codeAfter": "\nprint(round(average, 1))",
       "answer": "(a + b + c) / 3",
-      "accept": ["(a+b+c)/3", "(a+b+c)/3.0", "(c+b+a)/3"],
-      "explanation": "The brackets matter. Without them the division binds to c alone, and the answer is wrong by a wide margin." },
-
-    { "id": "EX_A1_04",
+      "accept": [
+        "(a+b+c)/3",
+        "(a+b+c)/3.0",
+        "(c+b+a)/3"
+      ],
+      "explanation": "The brackets matter. Without them the division binds to c alone, and the answer is wrong by a wide margin."
+    },
+    {
+      "id": "EX_A1_04",
       "label": "Write a relational expression",
-      "criteria": ["A.1.4"],
-      "language": "python", "kind": "trace", "aiVulnerability": "medium",
+      "criteria": [
+        "A.1.4"
+      ],
+      "language": "python",
+      "kind": "trace",
+      "aiVulnerability": "medium",
       "prompt": "What does this fragment print?",
       "code": "stock = 4\nreorder_at = 4\nprint(stock <= reorder_at)",
       "answer": "True",
-      "verify": { "python": "stock = 4\nreorder_at = 4\nprint(stock <= reorder_at)" },
-      "explanation": "<= is true when the two are equal. Using < here would let the stock fall past the reorder point unnoticed." },
-
-    { "id": "EX_B1_01",
+      "verify": {
+        "python": "stock = 4\nreorder_at = 4\nprint(stock <= reorder_at)"
+      },
+      "explanation": "<= is true when the two are equal. Using < here would let the stock fall past the reorder point unnoticed."
+    },
+    {
+      "id": "EX_B1_01",
       "label": "Write a selection that chooses between two paths",
-      "criteria": ["B.1.1"],
-      "language": "python", "kind": "complete", "aiVulnerability": "high",
+      "criteria": [
+        "B.1.1"
+      ],
+      "language": "python",
+      "kind": "complete",
+      "aiVulnerability": "high",
       "prompt": "Supply the line that begins the selection, so that 'Pass' is printed when the mark is 50 or more. This is criterion B.1.1, the one rule R1 exists for: compare what the platform says about this activity for learner E2 and for learner E4.",
       "codeBefore": "mark = 63\n",
       "codeAfter": ":\n    print(\"Pass\")\nelse:\n    print(\"Fail\")",
       "answer": "if mark >= 50",
-      "accept": ["ifmark>=50", "if50<=mark", "ifmark>49"],
-      "explanation": "The condition follows if, and the colon ends the header. 50 or more means >= 50, not > 50." },
-
-    { "id": "EX_B1_02",
+      "accept": [
+        "ifmark>=50",
+        "if50<=mark",
+        "ifmark>49"
+      ],
+      "explanation": "The condition follows if, and the colon ends the header. 50 or more means >= 50, not > 50."
+    },
+    {
+      "id": "EX_B1_02",
       "label": "Trace the effect of a selection on execution order",
-      "criteria": ["B.1.2"],
-      "language": "python", "kind": "trace", "aiVulnerability": "medium",
+      "criteria": [
+        "B.1.2"
+      ],
+      "language": "python",
+      "kind": "trace",
+      "aiVulnerability": "medium",
       "prompt": "What does this fragment print? Give one line of output per line.",
       "code": "print(\"start\")\nif 3 > 5:\n    print(\"inside\")\nprint(\"end\")",
       "answer": "start\nend",
-      "verify": { "python": "print(\"start\")\nif 3 > 5:\n    print(\"inside\")\nprint(\"end\")" },
-      "explanation": "The condition is false, so the indented block is skipped entirely. Execution resumes at the first line that is not part of the selection." },
-
-    { "id": "EX_B1_03",
+      "verify": {
+        "python": "print(\"start\")\nif 3 > 5:\n    print(\"inside\")\nprint(\"end\")"
+      },
+      "explanation": "The condition is false, so the indented block is skipped entirely. Execution resumes at the first line that is not part of the selection."
+    },
+    {
+      "id": "EX_B1_03",
       "label": "Nest one selection inside another",
-      "criteria": ["B.1.3"],
-      "language": "python", "kind": "complete", "aiVulnerability": "high",
+      "criteria": [
+        "B.1.3"
+      ],
+      "language": "python",
+      "kind": "complete",
+      "aiVulnerability": "high",
       "prompt": "Supply the inner selection header, so that 'Distinction' is printed only for a passing mark of 75 or more.",
       "codeBefore": "mark = 82\nif mark >= 50:\n    print(\"Pass\")\n    ",
       "codeAfter": ":\n        print(\"Distinction\")",
       "answer": "if mark >= 75",
-      "accept": ["ifmark>=75", "if75<=mark", "ifmark>74"],
-      "explanation": "The inner test runs only when the outer one held, so it does not need to repeat the >= 50 condition." },
-
-    { "id": "EX_B1_04",
+      "accept": [
+        "ifmark>=75",
+        "if75<=mark",
+        "ifmark>74"
+      ],
+      "explanation": "The inner test runs only when the outer one held, so it does not need to repeat the >= 50 condition."
+    },
+    {
+      "id": "EX_B1_04",
       "label": "Judge two selection structures",
-      "criteria": ["B.1.4"],
-      "language": "python", "kind": "mcq", "aiVulnerability": "medium",
+      "criteria": [
+        "B.1.4"
+      ],
+      "language": "python",
+      "kind": "mcq",
+      "aiVulnerability": "medium",
       "prompt": "Both fragments are meant to print Distinction at 75 and above, Pass from 50 to 74, and Fail below 50. Which criticism is correct?",
       "code": "# Fragment A\nif mark >= 50:\n    print(\"Pass\")\nelif mark >= 75:\n    print(\"Distinction\")\nelse:\n    print(\"Fail\")\n\n# Fragment B\nif mark >= 75:\n    print(\"Distinction\")\nelif mark >= 50:\n    print(\"Pass\")\nelse:\n    print(\"Fail\")",
       "options": [
@@ -101,21 +162,36 @@
         "A is wrong because elif is not valid Python"
       ],
       "answer": "0",
-      "explanation": "Order decides everything in a chain of elif. A tests the weaker condition first, so 80 never reaches the Distinction branch. B tests the strongest first and is correct." },
-
-    { "id": "EX_B1_05",
+      "explanation": "Order decides everything in a chain of elif. A tests the weaker condition first, so 80 never reaches the Distinction branch. B tests the strongest first and is correct."
+    },
+    {
+      "id": "EX_B1_05",
       "label": "Name the decision symbol",
-      "criteria": ["B.1.5"],
-      "language": null, "kind": "mcq", "aiVulnerability": "low",
+      "criteria": [
+        "B.1.5"
+      ],
+      "language": null,
+      "kind": "mcq",
+      "aiVulnerability": "low",
       "prompt": "Which flowchart symbol represents a decision?",
-      "options": ["A rectangle", "A diamond", "A parallelogram", "An oval"],
+      "options": [
+        "A rectangle",
+        "A diamond",
+        "A parallelogram",
+        "An oval"
+      ],
       "answer": "1",
-      "explanation": "The rectangle is a process, the parallelogram input or output, and the oval the start or end. Only the diamond has two exits, which is what a decision needs." },
-
-    { "id": "EX_C1_01",
+      "explanation": "The rectangle is a process, the parallelogram input or output, and the oval the start or end. Only the diamond has two exits, which is what a decision needs."
+    },
+    {
+      "id": "EX_C1_01",
       "label": "Counted repetition against sentinel repetition",
-      "criteria": ["C.1.1"],
-      "language": null, "kind": "mcq", "aiVulnerability": "medium",
+      "criteria": [
+        "C.1.1"
+      ],
+      "language": null,
+      "kind": "mcq",
+      "aiVulnerability": "medium",
       "prompt": "What distinguishes a counted loop from one that ends on a sentinel?",
       "options": [
         "A counted loop must use for and a sentinel loop must use while",
@@ -124,43 +200,72 @@
         "A counted loop cannot contain a condition"
       ],
       "answer": "1",
-      "explanation": "The difference is in what ends the loop, not in which keyword is written. Either can be expressed with either construct." },
-
-    { "id": "EX_C1_02",
+      "explanation": "The difference is in what ends the loop, not in which keyword is written. Either can be expressed with either construct."
+    },
+    {
+      "id": "EX_C1_02",
       "label": "Trace a condition-controlled loop",
-      "criteria": ["C.1.2"],
-      "language": "python", "kind": "trace", "aiVulnerability": "medium",
+      "criteria": [
+        "C.1.2"
+      ],
+      "language": "python",
+      "kind": "trace",
+      "aiVulnerability": "medium",
       "prompt": "What does this fragment print?",
       "code": "n = 1\nwhile n < 20:\n    n = n * 3\nprint(n)",
       "answer": "27",
-      "verify": { "python": "n = 1\nwhile n < 20:\n    n = n * 3\nprint(n)" },
-      "explanation": "n takes 3, 9 and 27. The test happens before each repetition, so the loop ends only once n has passed 20, and the value that ended it is the one printed." },
-
-    { "id": "EX_C1_03",
+      "verify": {
+        "python": "n = 1\nwhile n < 20:\n    n = n * 3\nprint(n)"
+      },
+      "explanation": "n takes 3, 9 and 27. The test happens before each repetition, so the loop ends only once n has passed 20, and the value that ended it is the one printed."
+    },
+    {
+      "id": "EX_C1_03",
       "label": "Repeat a known number of times",
-      "criteria": ["C.1.3"],
-      "language": "python", "kind": "complete", "aiVulnerability": "high",
+      "criteria": [
+        "C.1.3"
+      ],
+      "language": "python",
+      "kind": "complete",
+      "aiVulnerability": "high",
       "prompt": "Supply the loop header that repeats the body exactly five times.",
       "codeBefore": "",
       "codeAfter": ":\n    print(\"tick\")",
       "answer": "for i in range(5)",
-      "accept": ["foriinrange(5)", "for_inrange(5)", "foriinrange(0,5)", "forcountinrange(5)"],
-      "explanation": "range(5) yields 0 through 4, which is five values. range(1, 5) would give four." },
-
-    { "id": "EX_C1_04",
+      "accept": [
+        "foriinrange(5)",
+        "for_inrange(5)",
+        "foriinrange(0,5)",
+        "forcountinrange(5)"
+      ],
+      "explanation": "range(5) yields 0 through 4, which is five values. range(1, 5) would give four."
+    },
+    {
+      "id": "EX_C1_04",
       "label": "Accumulate a running total",
-      "criteria": ["C.1.4"],
-      "language": "python", "kind": "trace", "aiVulnerability": "medium",
+      "criteria": [
+        "C.1.4"
+      ],
+      "language": "python",
+      "kind": "trace",
+      "aiVulnerability": "medium",
       "prompt": "What does this fragment print?",
       "code": "total = 0\nfor value in [4, 11, 6, 9]:\n    if value > 5:\n        total = total + value\nprint(total)",
       "answer": "26",
-      "verify": { "python": "total = 0\nfor value in [4, 11, 6, 9]:\n    if value > 5:\n        total = total + value\nprint(total)" },
-      "explanation": "4 fails the test. 11 + 6 + 9 = 26. The accumulator is initialised before the loop; initialising it inside would reset it on every repetition." },
-
-    { "id": "EX_C1_05",
+      "verify": {
+        "python": "total = 0\nfor value in [4, 11, 6, 9]:\n    if value > 5:\n        total = total + value\nprint(total)"
+      },
+      "explanation": "4 fails the test. 11 + 6 + 9 = 26. The accumulator is initialised before the loop; initialising it inside would reset it on every repetition."
+    },
+    {
+      "id": "EX_C1_05",
       "label": "Order the steps of an accumulation",
-      "criteria": ["C.1.4"],
-      "language": null, "kind": "order", "aiVulnerability": "low",
+      "criteria": [
+        "C.1.4"
+      ],
+      "language": null,
+      "kind": "order",
+      "aiVulnerability": "low",
       "prompt": "Put the steps of a loop that reports a running total into the order they must occur.",
       "options": [
         "Set the accumulator to zero",
@@ -170,7 +275,26 @@
         "Report the accumulator"
       ],
       "answer": "0,1,2,3,4",
-      "explanation": "The accumulator must be set before the loop and reported after it. Setting it inside would lose the total; reporting inside would report a partial one." }
-
+      "explanation": "The accumulator must be set before the loop and reported after it. Setting it inside would lose the total; reporting inside would report a partial one."
+    },
+    {
+      "id": "EX_B1_05",
+      "label": "Why a program needs to decide",
+      "criteria": [
+        "B.1.6"
+      ],
+      "language": "python",
+      "kind": "mcq",
+      "aiVulnerability": "low",
+      "prompt": "Why does a program need a selection control structure at all?",
+      "options": [
+        "So that it can take a different action depending on the data it is given",
+        "So that it runs faster than a program without one",
+        "So that its statements are executed in the order they are written",
+        "So that variables can be given values"
+      ],
+      "answer": "0",
+      "explanation": "Without selection, a program does the same thing whatever its input. The other three describe efficiency, sequence and assignment, none of which needs a decision."
+    }
   ]
 }

@@ -59,6 +59,47 @@ async function labelMap (db, ids) {
  * platform however the data was fetched, and verify_parity.py puts that one
  * statement on trial.
  */
+function highest (levels) {
+  let best = null
+  for (const level of levels) {
+    if (best === null || LEVEL_ORDER.indexOf(level) > LEVEL_ORDER.indexOf(best)) best = level
+  }
+  return best
+}
+
+/**
+ * Rule R1d. Where a criterion requires no procedure, procedural familiarity has
+ * nothing to say about it and the asserted level stands. Both R1a and R1b
+ * require a process, so without this an activity of only such criteria receives
+ * no level at all. The activity's level is the highest across its criteria,
+ * which is the reading already taken where R1 derives more than one.
+ */
+function withAsserted (verdict, asserted) {
+  if (!asserted.length) return verdict
+  const standing = highest(asserted)
+  if (!verdict) {
+    return {
+      level: standing,
+      rule: 'R1d',
+      basis: 'This activity asks for nothing to be carried out, so what the ' +
+             'learner has been taught does not change its level. The level the ' +
+             'curriculum states for it stands.',
+      required: [],
+      unmet: []
+    }
+  }
+  if (LEVEL_ORDER.indexOf(standing) <= LEVEL_ORDER.indexOf(verdict.level)) return verdict
+  return {
+    level: standing,
+    rule: 'R1d',
+    basis: 'This activity also addresses a criterion that asks for nothing to ' +
+           'be carried out, and the level the curriculum states for it is the ' +
+           'higher. An activity is no easier than its hardest part.',
+    required: verdict.required,
+    unmet: verdict.unmet
+  }
+}
+
 function decide (required, met, completedIdentical, labelFor) {
   const unmet = required.filter((p) => !met.has(p))
 
@@ -132,8 +173,19 @@ export async function effectiveLevel (db, learnerId, activityId, includeEarned =
     completedIdentical = done.length > 0
   }
 
+  const standing = (await db.all(
+    `SELECT c.asserted_level AS level
+       FROM activity_criterion ac
+       JOIN criterion c ON c.id = ac.criterion_id
+      WHERE ac.activity_id = ? AND c.process_id IS NULL`,
+    [activityId])).map((r) => r.level)
+
   const labels = await labelMap(db, required)
-  return decide(required, met, completedIdentical, (id) => labels.get(id) || id)
+  if (!required.length && !completedIdentical && standing.length) {
+    return withAsserted(null, standing)
+  }
+  return withAsserted(
+    decide(required, met, completedIdentical, (id) => labels.get(id) || id), standing)
 }
 
 /**
@@ -178,9 +230,24 @@ export async function effectiveLevels (db, learnerId, includeEarned = true) {
     required.get(row.activity_id).push(row.process_id)
   }
 
+  const standing = new Map()
+  for (const row of await db.all(
+    `SELECT ac.activity_id, c.asserted_level AS level
+       FROM activity_criterion ac
+       JOIN criterion c ON c.id = ac.criterion_id
+      WHERE c.process_id IS NULL`, [])) {
+    if (!standing.has(row.activity_id)) standing.set(row.activity_id, [])
+    standing.get(row.activity_id).push(row.level)
+  }
+
   const out = new Map()
   for (const row of await db.all('SELECT id FROM activity', [])) {
-    out.set(row.id, decide(required.get(row.id) || [], met, done.has(row.id), labelFor))
+    const needs = required.get(row.id) || []
+    const stands = standing.get(row.id) || []
+    const completed = done.has(row.id)
+    out.set(row.id, (!needs.length && !completed && stands.length)
+      ? withAsserted(null, stands)
+      : withAsserted(decide(needs, met, completed, labelFor), stands))
   }
   return out
 }

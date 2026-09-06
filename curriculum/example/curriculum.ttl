@@ -78,7 +78,7 @@ gpo:LO_PROG101_B_1 a owl:NamedIndividual , gpo:LearningOutcome ;
     rdfs:label "B.1 Making decisions" ;
     gpo:hasCriterion gpo:AC_PROG101_B_1_1 , gpo:AC_PROG101_B_1_2 ,
                      gpo:AC_PROG101_B_1_3 , gpo:AC_PROG101_B_1_4 ,
-                     gpo:AC_PROG101_B_1_5 .
+                     gpo:AC_PROG101_B_1_5 , gpo:AC_PROG101_B_1_6 .
 
 gpo:LO_PROG101_C_1 a owl:NamedIndividual , gpo:LearningOutcome ;
     rdfs:label "C.1 Repeating work" ;
@@ -168,6 +168,14 @@ gpo:AC_PROG101_B_1_5 a owl:NamedIndividual , gpo:AssessmentCriterion ;
     gpo:atCognitiveLevel gpo:Remember ;
     gpo:requiresProcess gpo:P_X08 ;
     gpo:levelFlag "" .
+
+gpo:AC_PROG101_B_1_6 a owl:NamedIndividual , gpo:AssessmentCriterion ;
+    rdfs:label "B.1.6" ;
+    gpo:criterionCode "B.1.6" ;
+    gpo:criterionText "The reason a program needs to make decisions at all is explained." ;
+    gpo:atCognitiveLevel gpo:Understand ;
+    gpo:levelFlag "" ;
+    rdfs:comment "The case rule R1d exists for. The criterion is satisfied by an explanation: nothing is carried out, so it carries no requiresProcess, R1a and R1b cannot fire on it, and the asserted level stands however much the learner has been taught. Without R1d an activity addressing only this criterion would receive no level at all." .
 
 gpo:AC_PROG101_C_1_1 a owl:NamedIndividual , gpo:AssessmentCriterion ;
     rdfs:label "C.1.1" ;
