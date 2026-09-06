@@ -53,3 +53,5 @@ evaluation/output/
 Thumbs.db
 desktop.ini
 .DS_Store
+docs/server.log
+docs/server.log.err
