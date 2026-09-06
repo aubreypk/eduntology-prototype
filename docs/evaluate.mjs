@@ -358,16 +358,29 @@ async function layer3 (context, demo) {
     record(1, null, 'not applicable to this activity kind')
   }
 
-  // H7 partial: keyboard reachability.
+  // H7 partial: keyboard reachability, as two separate questions, because they
+  // have separate answers and conflating them cost three attempts to see it.
   //
-  // The obvious version of this check is wrong, and was wrong here: it counted
-  // everything matching an interactive selector and compared that with what
-  // tabbing reached. But an element inside a closed <details>, or hidden, or
-  // carrying tabindex="-1", is not in the tab order and should not be, so the
-  // comparison reports a failure where the interface is behaving correctly.
-  // What follows marks the elements that are genuinely focusable, walks the tab
-  // order, and names anything it did not reach.
-  await go(page, routes(demo)[0])
+  //   H7a  from a fresh load, does the first press of Tab reach the skip link?
+  //        That is the whole purpose of a skip link, and moving focus into the
+  //        page on mount defeats it. Answered by loading the page and pressing
+  //        Tab once -- not by walking, which cannot distinguish "unreachable"
+  //        from "behind where focus already was".
+  //   H7b  from the first control, does tabbing reach every other one? That is
+  //        a property of the tab order and is answered by walking it from a
+  //        known starting point.
+  await page.goto(BASE)
+  await page.waitForSelector('#learner-select')
+  await page.waitForTimeout(300)
+  await page.keyboard.press('Tab')
+  const firstStop = await page.evaluate(() => {
+    const el = document.activeElement
+    if (!el || el === document.body) return '(nothing)'
+    return (el.textContent || el.tagName).trim().slice(0, 40)
+  })
+  record(7.1, /skip/i.test(firstStop),
+    `the first Tab from a fresh load reaches "${firstStop}"`)
+
   const expected = await page.evaluate(() => {
     const selector = 'a[href], button:not([disabled]), select, input:not([disabled]), ' +
       'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -377,35 +390,21 @@ async function layer3 (context, demo) {
       if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') continue
       const style = getComputedStyle(el)
       if (style.display === 'none' || style.visibility === 'hidden') continue
-      const box = el.getBoundingClientRect()
-      if (box.width === 0 && box.height === 0) continue
       el.setAttribute('data-tab-probe', String(n))
       n += 1
     }
     return n
   })
 
-  // Walk the tab order in both directions and take the union. Blurring does not
-  // reset the sequential focus navigation starting point in Chromium, so a
-  // forward-only walk measures where focus happened to be as much as it
-  // measures the tab order. Walking back as well removes that from the result;
-  // whether a control sits behind the starting point on load is a separate
-  // question, and one for the interface rather than for this count.
-  const reachedSet = new Set()
-  const probe = async () => {
+  const reachedSet = new Set(['0'])
+  await page.evaluate(() => document.querySelector('[data-tab-probe="0"]').focus())
+  for (let i = 0; i < expected + 2; i += 1) {
+    await page.keyboard.press('Tab')
     const found = await page.evaluate(() => {
       const el = document.activeElement
       return el && el.getAttribute ? el.getAttribute('data-tab-probe') : null
     })
     if (found !== null) reachedSet.add(found)
-  }
-  for (let i = 0; i < expected + 5; i += 1) {
-    await page.keyboard.press('Tab')
-    await probe()
-  }
-  for (let i = 0; i < expected + 5; i += 1) {
-    await page.keyboard.press('Shift+Tab')
-    await probe()
   }
   const missed = await page.evaluate((reached) => {
     const out = []
@@ -418,8 +417,8 @@ async function layer3 (context, demo) {
     return out
   }, [...reachedSet])
 
-  record(7, missed.length === 0,
-    `${reachedSet.size} of ${expected} focusable controls reached by tabbing` +
+  record(7.2, missed.length === 0,
+    `${reachedSet.size} of ${expected} focusable controls reached by tabbing from the first` +
     (missed.length ? `; missed ${missed.slice(0, 5).join(', ')}` : ''))
 
   // H8 measured, not judged
@@ -533,8 +532,11 @@ async function layer4 (context, demo, learners, thompsonCode, demoKind) {
       // Opening them until it appears is what a person would do, and each one
       // opened is a step: an agent that has to try four outcomes has deviated
       // from the path of someone who knew which to open.
+      await page.waitForSelector('details summary', { timeout: 10000 })
+      await page.waitForTimeout(200)
       const summaries = page.locator('details summary')
       const total = await summaries.count()
+      if (total === 0) throw new Error('the curriculum view showed no outcomes to open')
       for (let i = 0; i < total; i += 1) {
         let found = false
         await step(async () => {
