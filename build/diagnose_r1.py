@@ -15,11 +15,13 @@
 #        either the classification or the process link is wrong.
 #
 #   (ii) An activity addresses several criteria, some procedural and some not.
-#        R1 derives one level for the whole activity from the procedural ones,
-#        and that level then stands against the non-procedural criteria too.
-#        If this dominates, neither R1 nor the classification is wrong: the
-#        granularity is. Level is derived per activity and asserted per
-#        criterion, and the two do not meet.
+#        Before rule R1d this was a defect: R1 derived one level for the whole
+#        activity from the procedural criteria and it stood against the others
+#        too. Since R1d each criterion contributes a level of its own and the
+#        activity takes the highest, so a divergence of this shape is now the
+#        model working -- prior instruction moved a procedural criterion, and
+#        the activity followed it. It is reported separately rather than as a
+#        fault.
 #
 # The question is decided by counting, not by argument, and this counts it.
 # It reads build/kb.db, so run build_kb.py first. It changes nothing.
@@ -81,7 +83,6 @@ def main():
 
     direct = 0          # mechanism (i)
     spread = 0          # mechanism (ii)
-    both = 0
     agreed = 0
     direct_criteria = {}
     spread_criteria = {}
@@ -98,11 +99,9 @@ def main():
         by_process = [r for r in stranded if r["process_id"]]
         no_process = [r for r in stranded if not r["process_id"]]
 
-        if by_process and no_process:
-            both += 1
-        elif by_process:
+        if by_process:
             direct += 1
-        elif no_process:
+        else:
             spread += 1
 
         for r in by_process:
@@ -118,40 +117,44 @@ def main():
     print("  where it is not                                     %5d" % (total - agreed))
     print()
     print("Of the contexts that diverge:")
-    print("  (i)  a criterion carries a process yet is asserted")
-    print("       at a level R1 cannot express                   %5d" % direct)
-    print("  (ii) a non-procedural criterion shares an activity")
-    print("       with a procedural one                          %5d" % spread)
-    print("  both mechanisms present                             %5d" % both)
+    print("  (i)  a criterion requires a procedure and is asserted")
+    print("       at a level R1 cannot derive -- the limitation   %5d" % direct)
+    print("  (ii) prior instruction moved a procedural criterion")
+    print("       and the activity followed it -- the claim       %5d" % spread)
     print()
 
     if direct_criteria:
-        print("Criteria driving (i) — these carry a process and are classified otherwise.")
-        print("Either the classification or the process link is wrong on each of them:")
+        print("Criteria driving (i) — each requires a procedure to be carried out and is")
+        print("classified at a level R1 cannot derive. Either the classification or the")
+        print("process link is unsound, or the criterion is a case the rule cannot hold:")
         for key, n in sorted(direct_criteria.items(), key=lambda kv: -kv[1]):
             print("   %-58s %4d contexts" % (key, n))
         print()
 
     if spread_criteria:
-        print("Criteria driving (ii) — these have no process, and take their level from")
-        print("whatever else the activity addresses:")
+        print("Non-procedural criteria present in those contexts. Since R1d each of")
+        print("these contributes its asserted level and the activity takes the highest,")
+        print("so their presence no longer means their level was overwritten:")
         for key, n in sorted(spread_criteria.items(), key=lambda kv: -kv[1]):
             print("   %-58s %4d contexts" % (key, n))
         print()
 
     print("Reading the result")
     print("------------------")
-    if direct > spread:
-        print("   (i) dominates. The disagreement is largely between two things the")
-        print("   curriculum asserts about the same criterion, not between R1 and the")
-        print("   classification. Settle the encoding before revising the rule.")
-    elif spread > direct:
-        print("   (ii) dominates. R1 and the classification are not in conflict; they")
-        print("   are answering about different units. The revision to consider is one")
-        print("   of granularity — deriving a level per criterion and reporting the")
-        print("   activity's level as a function of them — rather than of R1 itself.")
+    if direct == 0:
+        print("   Every divergence is the model working: prior instruction moved a")
+        print("   criterion from its stated classification and the activity followed.")
+        print("   No criterion is classified beyond what rule R1 can derive.")
+    elif direct > spread:
+        print("   Most of the divergence is criteria the rule cannot express. Settle")
+        print("   the encoding, or extend the rule, before reading anything else into")
+        print("   these numbers.")
     else:
-        print("   Neither mechanism dominates. Both revisions are in play.")
+        print("   %d of %d divergent contexts are the model working. The remaining %d"
+              % (spread, spread + direct, direct))
+        print("   involve a criterion that requires a procedure and is classified at a")
+        print("   level R1 cannot derive; each is named above and is a limitation of")
+        print("   the rule rather than an error in the curriculum.")
 
     db.close()
 

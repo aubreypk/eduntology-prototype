@@ -270,11 +270,11 @@ for cid, (lid, aid) in context_ids.items():
 say("   %d of %d platform contexts received a level" % (len(platform_contexts),
                                                         len(context_ids)))
 if multi:
-    msg = ("Rule R1 derived more than one level for %d contexts. This happens "
-           "where an activity addresses criteria requiring different taught "
-           "processes and the learner has met some but not all of them. The "
-           "highest level is taken, on the reading that an activity is no "
-           "easier than its hardest unmet part." % multi)
+    msg = ("Rule R1 derived more than one level for %d contexts. An activity "
+           "addressing several criteria receives a level for each: derived by "
+           "R1a to R1c where the criterion requires a procedure, and asserted by "
+           "R1d where it does not. The highest is taken, on the reading that an "
+           "activity is no easier than its hardest part." % multi)
     say("   note: %s" % msg)
     report["findings"].append(msg)
 
@@ -392,37 +392,61 @@ if platform_violations:
 # R2's shape tests the criterion's asserted level. The platform selects on the
 # effective level R1 derived. Where the two differ, the shape and the selection
 # are looking at different things; that divergence is measured, not hidden.
+#
+# Since rule R1d, an activity receives one level for each criterion it addresses
+# -- derived by R1a to R1c where the criterion requires a procedure, asserted
+# where it does not -- and the highest is taken. A level outside the asserted set
+# therefore means the rule moved at least one criterion, which is the claim of
+# the study rather than a defect. What would be a defect is the remaining case:
+# a criterion that requires a procedure and is nonetheless classified at a level
+# R1 cannot derive at all.
+DERIVABLE = ("Remember", "Apply", "Create")
+
 divergent = 0
-overridden = {}
 for cid, (lid, aid, level, _n, _all) in platform_contexts.items():
-    asserted = asserted_levels[aid]
-    if level not in asserted:
+    if level not in asserted_levels[aid]:
         divergent += 1
-        for lv in asserted:
-            if lv not in ("Apply", "Create"):
-                overridden[lv] = overridden.get(lv, 0) + 1
+
+beyond = {}
+for c in criteria.values():
+    if c.get("process") and c["level"] not in DERIVABLE:
+        beyond.setdefault(c["level"], []).append(c["code"])
+
+criteria_of_activity = {a["id"]: set(a["criteria"]) for a in activities}
+beyond_contexts = 0
+if beyond:
+    reach = {code for codes in beyond.values() for code in codes}
+    for cid, (lid, aid, level, _n, _all) in platform_contexts.items():
+        if any(c in reach for c in criteria_of_activity[aid]):
+            beyond_contexts += 1
 
 if divergent:
-    msg = ("In %d of %d contexts the effective level derived by R1 is not among "
-           "the levels asserted on the activity's criteria. The platform selects "
-           "elements on the effective level; the SHACL shape for R2 tests against "
-           "the asserted level. The design proposal therefore excludes any element "
+    msg = ("In %d of %d contexts the level the platform serves is not among the "
+           "levels the activity's criteria assert. Since rule R1d each criterion "
+           "contributes a level -- derived where it requires a procedure, asserted "
+           "where it does not -- and the activity takes the highest, so this counts "
+           "the contexts in which prior instruction moved the activity away from "
+           "its stated classification. That is what the model is for. The SHACL "
+           "shape for R2 tests the asserted level while the platform selects on "
+           "the effective one, and the design proposal excludes any element "
            "contraindicated at either, so both readings are satisfied."
            % (divergent, len(platform_contexts)))
     say()
     say("   FINDING: %s" % msg)
     report["findings"].append(msg)
 
-if overridden:
-    msg = ("Rule R1 as formulated derives only Apply, Create or Remember, because "
-           "it reasons from procedural familiarity alone. It therefore replaces the "
-           "asserted level of criteria that are not procedural: %s. A criterion "
-           "such as 'the difference between two loop kinds is explained' sits at "
-           "Understand whatever the learner has been taught, and R1 has no way to "
-           "say so. This is a limitation of R1 as stated in Section 4.4.4 and is a "
-           "candidate for revision: the rule should apply where a criterion "
-           "requires a process to be carried out, and leave other criteria alone."
-           % ", ".join("%s in %d contexts" % (k, v) for k, v in sorted(overridden.items())))
+if beyond:
+    msg = ("%d criterion/criteria require a procedure to be carried out and are "
+           "nonetheless classified at a level rule R1 cannot derive (%s), which "
+           "affects %d contexts. R1 reasons from procedural familiarity and can "
+           "place such a criterion only at Remember, Apply or Create; the "
+           "classification says otherwise, and both are defensible. This is the "
+           "case the rule cannot accommodate and it is reported rather than "
+           "resolved."
+           % (sum(len(v) for v in beyond.values()),
+              "; ".join("%s at %s" % (", ".join(sorted(codes)), lv)
+                        for lv, codes in sorted(beyond.items())),
+              beyond_contexts))
     say()
     say("   FINDING: %s" % msg)
     report["findings"].append(msg)
