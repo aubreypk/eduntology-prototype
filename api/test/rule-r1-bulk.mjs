@@ -124,7 +124,7 @@ for (const includeEarned of [true, false]) {
   }
 }
 
-// The fixture must actually exercise all three cases, or agreement means nothing.
+// The fixture must actually exercise all four cases, or agreement means nothing.
 const seen = new Set()
 const bulk = await rules.effectiveLevels(adapter, 'L4')
 for (const verdict of bulk.values()) seen.add(verdict.rule)
