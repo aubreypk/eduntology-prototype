@@ -97,9 +97,20 @@ export default function App () {
     }
   }, [role, path])
 
-  // Move focus to the heading on a route change, so that a keyboard or screen
-  // reader user is not left at the top of the navigation after every click.
+  // Move focus to the heading on a route CHANGE, so that a keyboard or screen
+  // reader user is not left at the top of the navigation after every click --
+  // but not on the first render. Moving focus into main before the user has
+  // done anything puts the skip link and the role switch behind the focus
+  // position, so the first thing Tab reaches is the third control on the page
+  // and the skip link can only be found by tabbing backwards. A skip link that
+  // cannot be tabbed to is not doing the one job it has. Layer 3 of the
+  // evaluation is what caught this.
+  const settled = useRef(false)
   useEffect(() => {
+    if (!settled.current) {
+      settled.current = true
+      return
+    }
     if (mainRef.current) mainRef.current.focus()
   }, [route, role])
 

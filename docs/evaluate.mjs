@@ -385,21 +385,27 @@ async function layer3 (context, demo) {
     return n
   })
 
-  // Start the walk at the beginning of the document. The interface moves focus
-  // to the main landmark on a route change, which is correct behaviour and
-  // exactly why the walk has to be reset: everything before main -- the skip
-  // link, the role switch -- is otherwise behind the starting point and counted
-  // as unreachable.
-  await page.evaluate(() => { if (document.activeElement) document.activeElement.blur() })
-
+  // Walk the tab order in both directions and take the union. Blurring does not
+  // reset the sequential focus navigation starting point in Chromium, so a
+  // forward-only walk measures where focus happened to be as much as it
+  // measures the tab order. Walking back as well removes that from the result;
+  // whether a control sits behind the starting point on load is a separate
+  // question, and one for the interface rather than for this count.
   const reachedSet = new Set()
-  for (let i = 0; i < expected + 5; i += 1) {
-    await page.keyboard.press('Tab')
-    const probe = await page.evaluate(() => {
+  const probe = async () => {
+    const found = await page.evaluate(() => {
       const el = document.activeElement
       return el && el.getAttribute ? el.getAttribute('data-tab-probe') : null
     })
-    if (probe !== null) reachedSet.add(probe)
+    if (found !== null) reachedSet.add(found)
+  }
+  for (let i = 0; i < expected + 5; i += 1) {
+    await page.keyboard.press('Tab')
+    await probe()
+  }
+  for (let i = 0; i < expected + 5; i += 1) {
+    await page.keyboard.press('Shift+Tab')
+    await probe()
   }
   const missed = await page.evaluate((reached) => {
     const out = []
