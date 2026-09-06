@@ -278,7 +278,7 @@
       "explanation": "The accumulator must be set before the loop and reported after it. Setting it inside would lose the total; reporting inside would report a partial one."
     },
     {
-      "id": "EX_B1_05",
+      "id": "EX_B1_06",
       "label": "Why a program needs to decide",
       "criteria": [
         "B.1.6"
