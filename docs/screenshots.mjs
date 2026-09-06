@@ -228,13 +228,29 @@ async function main () {
   console.log('\nStudent view')
   await setRole(page, 'student')
 
+  // The captions state counts, and a caption that states a count must take it
+  // from the data rather than from what the author expected. Rule R1d made the
+  // hand-written version of these two false without changing anything visible
+  // in the script, which is exactly the failure worth designing out.
+  const tally = (rows) => {
+    const counts = new Map()
+    for (const row of rows) counts.set(row.effectiveLevel, (counts.get(row.effectiveLevel) || 0) + 1)
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([level, n]) => `${n} at ${level}`)
+      .join(', ')
+  }
+
+  const firstLevels = tally(catalogue)
+  const lastLevels = tally(await api(`/api/activities?learner=${last.id}`))
+
   await setLearner(page, first.id)
   await shot(page, 'student-list-untaught',
-    `The activity list for ${first.id}, ${first.label}. Nothing has been taught, so rule R1 places every activity at Create.`)
+    `The activity list for ${first.id}, ${first.label}: ${firstLevels}. Nothing has been taught, so every activity requiring a procedure sits at Create; the rest stand at the level their criteria assert.`)
 
   await setLearner(page, last.id)
   await shot(page, 'student-list-taught',
-    `The same activities for ${last.id}, ${last.label}. Every one is now at Apply. The activities did not change.`)
+    `The same activities for ${last.id}, ${last.label}: ${lastLevels}. The activities did not change.`)
 
   await setLearner(page, first.id)
   await openActivity(page, demo.id)
