@@ -385,6 +385,13 @@ async function layer3 (context, demo) {
     return n
   })
 
+  // Start the walk at the beginning of the document. The interface moves focus
+  // to the main landmark on a route change, which is correct behaviour and
+  // exactly why the walk has to be reset: everything before main -- the skip
+  // link, the role switch -- is otherwise behind the starting point and counted
+  // as unreachable.
+  await page.evaluate(() => { if (document.activeElement) document.activeElement.blur() })
+
   const reachedSet = new Set()
   for (let i = 0; i < expected + 5; i += 1) {
     await page.keyboard.press('Tab')
@@ -516,11 +523,21 @@ async function layer4 (context, demo, learners, thompsonCode, demoKind) {
       await step(async () => { await page.goto(BASE); await page.waitForSelector('#learner-select') })
       await step(async () => { await setRole(page, 'lecturer') })
       await step(async () => { await page.getByRole('link', { name: 'Curriculum' }).click() })
-      await step(async () => {
-        const summary = page.locator('details summary').first()
-        await summary.click()
-        await page.waitForTimeout(300)
-      })
+      // The criterion belongs to one outcome and the outcomes are collapsed.
+      // Opening them until it appears is what a person would do, and each one
+      // opened is a step: an agent that has to try four outcomes has deviated
+      // from the path of someone who knew which to open.
+      const summaries = page.locator('details summary')
+      const total = await summaries.count()
+      for (let i = 0; i < total; i += 1) {
+        let found = false
+        await step(async () => {
+          await summaries.nth(i).click()
+          await page.waitForTimeout(120)
+          found = (await page.locator('main').innerText()).includes(thompsonCode)
+        })
+        if (found) break
+      }
       const body = await page.locator('main').innerText()
       if (!body.includes(thompsonCode)) throw new Error(`${thompsonCode} not found in the curriculum view`)
       return `${thompsonCode} shown with its classification`
