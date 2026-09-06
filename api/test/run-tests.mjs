@@ -198,7 +198,12 @@ check('GET /api/traceability', trace.status === 200 && Array.isArray(trace.body)
 const list = await call('GET', `/api/activities?learner=${someLearner}`)
 check('GET /api/activities', list.status === 200 && list.body.length === activities.length)
 check('activity list carries a level and a rule',
-  list.body.every((a) => a.effectiveLevel && /^R1[abc]$/.test(a.rule)))
+  list.body.every((a) => a.effectiveLevel && /^R1[a-d]$/.test(a.rule)),
+  // R1d is as much a case of the rule as the other three: it is what places a
+  // criterion that requires no procedure at the level the curriculum states.
+  // An activity list in which no activity carries it would mean the corpus has
+  // no such criterion, not that the rule has three cases.
+  (list.body.find((a) => !/^R1[a-d]$/.test(a.rule)) || {}).rule)
 
 const first = list.body[0]
 const detail = await call('GET', `/api/activities/${first.id}?learner=${someLearner}`)

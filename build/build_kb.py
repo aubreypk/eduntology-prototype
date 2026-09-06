@@ -219,7 +219,7 @@ head("4. Materialising rule R1")
 
 R1_QUERIES = {}
 r1_source = open(paths.R1_RQ, encoding="utf-8").read()
-# The .rq file holds three CONSTRUCT queries after one shared PREFIX line. They
+# The .rq file holds four CONSTRUCT queries after one shared PREFIX line. They
 # are split out of the file rather than repeated here, so that the rule has one
 # home on disk. The split is on a line that begins with CONSTRUCT in column one,
 # which no comment does.
