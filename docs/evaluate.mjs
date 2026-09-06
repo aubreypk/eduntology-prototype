@@ -37,6 +37,7 @@ const BASE = option('base', 'http://127.0.0.1:8000').replace(/\/$/, '')
 const OUT = resolve(ROOT, option('out', 'docs/evaluation'))
 const LAYER = option('layer', 'all')
 const WANTED = option('browser', null)
+const PINNED = option('activity', null)
 const DESKTOP = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
 
@@ -357,24 +358,56 @@ async function layer3 (context, demo) {
     record(1, null, 'not applicable to this activity kind')
   }
 
-  // H7 partial: keyboard reachability
+  // H7 partial: keyboard reachability.
+  //
+  // The obvious version of this check is wrong, and was wrong here: it counted
+  // everything matching an interactive selector and compared that with what
+  // tabbing reached. But an element inside a closed <details>, or hidden, or
+  // carrying tabindex="-1", is not in the tab order and should not be, so the
+  // comparison reports a failure where the interface is behaving correctly.
+  // What follows marks the elements that are genuinely focusable, walks the tab
+  // order, and names anything it did not reach.
   await go(page, routes(demo)[0])
-  const interactive = await page.locator(
-    'a[href], button:not([disabled]), select, input, textarea, [tabindex]:not([tabindex="-1"])'
-  ).count()
-  let reached = 0
-  const visited = new Set()
-  for (let i = 0; i < interactive + 10; i += 1) {
+  const expected = await page.evaluate(() => {
+    const selector = 'a[href], button:not([disabled]), select, input:not([disabled]), ' +
+      'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    let n = 0
+    for (const el of document.querySelectorAll(selector)) {
+      if (el.closest('details:not([open])') && el.tagName !== 'SUMMARY') continue
+      if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') continue
+      const style = getComputedStyle(el)
+      if (style.display === 'none' || style.visibility === 'hidden') continue
+      const box = el.getBoundingClientRect()
+      if (box.width === 0 && box.height === 0) continue
+      el.setAttribute('data-tab-probe', String(n))
+      n += 1
+    }
+    return n
+  })
+
+  const reachedSet = new Set()
+  for (let i = 0; i < expected + 5; i += 1) {
     await page.keyboard.press('Tab')
-    const mark = await page.evaluate(() => {
+    const probe = await page.evaluate(() => {
       const el = document.activeElement
-      if (!el || el === document.body) return null
-      return (el.id || '') + '|' + el.tagName + '|' + (el.textContent || '').slice(0, 20)
+      return el && el.getAttribute ? el.getAttribute('data-tab-probe') : null
     })
-    if (mark && !visited.has(mark)) { visited.add(mark); reached += 1 }
+    if (probe !== null) reachedSet.add(probe)
   }
-  record(7, reached >= interactive,
-    `${reached} of ${interactive} interactive controls reached by tabbing`)
+  const missed = await page.evaluate((reached) => {
+    const out = []
+    for (const el of document.querySelectorAll('[data-tab-probe]')) {
+      if (!reached.includes(el.getAttribute('data-tab-probe'))) {
+        out.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
+          ': ' + (el.textContent || '').trim().slice(0, 30))
+      }
+    }
+    return out
+  }, [...reachedSet])
+
+  record(7, missed.length === 0,
+    `${reachedSet.size} of ${expected} focusable controls reached by tabbing` +
+    (missed.length ? `; missed ${missed.slice(0, 5).join(', ')}` : ''))
 
   // H8 measured, not judged
   const density = await page.evaluate(() => ({
@@ -530,7 +563,8 @@ async function layer4 (context, demo, learners, thompsonCode, demoKind) {
       })
       const after = (await page.locator('#level-heading').innerText()).trim()
       if (before !== after) throw new Error(`moved from ${before} to ${after}`)
-      return `${fixed.length} activities hold their level; ${fixed[0].id} stays at ${before.replace(/\s+/g, ' ')}`
+      const level = (before.match(/(Remember|Understand|Apply|Analyse|Evaluate|Create)/) || [])[1] || before
+      return `${fixed.length} activities hold their level across the two learners; ${fixed[0].id} stays at ${level}`
     })
 
   await page.close()
@@ -552,8 +586,12 @@ async function main () {
       .filter((c) => c.flag === 'Thompson')
       .map((c) => c.code))
   const demoActivity =
+    (PINNED && catalogue.find((a) => a.id === PINNED)) ||
     catalogue.find((a) => a.kind === 'complete' && a.criteria.some((c) => thompson.has(c))) ||
     catalogue.find((a) => a.kind === 'complete') || catalogue[0]
+  if (PINNED && demoActivity.id !== PINNED) {
+    throw new Error(`No activity ${PINNED} in the catalogue.`)
+  }
   const thompsonCode = demoActivity.criteria[0]
 
   // The model answer is not served by the API, on purpose. Read it from the

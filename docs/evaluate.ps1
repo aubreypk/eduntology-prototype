@@ -14,6 +14,7 @@ param(
     [string]$Curriculum = 'tut',
     [int]   $Port       = 8000,
     [string]$Layer      = 'all',
+    [string]$Activity   = 'ACT_D2_01',
     [string]$Browser    = '',
     [switch]$SkipBuild
 )
@@ -79,6 +80,7 @@ try {
 
         Step 4 "Measuring (layer $Layer)"
         $runArgs = @('docs\evaluate.mjs', '--base', $base, '--layer', $Layer)
+        if ($Activity) { $runArgs += @('--activity', $Activity) }
         if ($Browser) { $runArgs += @('--browser', $Browser) }
         node @runArgs
         if ($LASTEXITCODE -ne 0) { throw 'the evaluation failed' }
