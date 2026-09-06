@@ -407,12 +407,19 @@ for cid, (lid, aid, level, _n, _all) in platform_contexts.items():
     if level not in asserted_levels[aid]:
         divergent += 1
 
+criteria_of_activity = {a["id"]: set(a["criteria"]) for a in activities}
+addressed_codes = {code for codes in criteria_of_activity.values() for code in codes}
+
+# A criterion is only a live problem if an activity addresses it; the rest would
+# become one the moment an activity were authored for them, which is worth
+# knowing and is not the same claim.
 beyond = {}
+dormant = {}
 for c in criteria.values():
     if c.get("process") and c["level"] not in DERIVABLE:
-        beyond.setdefault(c["level"], []).append(c["code"])
+        target = beyond if c["code"] in addressed_codes else dormant
+        target.setdefault(c["level"], []).append(c["code"])
 
-criteria_of_activity = {a["id"]: set(a["criteria"]) for a in activities}
 beyond_contexts = 0
 if beyond:
     reach = {code for codes in beyond.values() for code in codes}
@@ -436,21 +443,44 @@ if divergent:
     report["findings"].append(msg)
 
 if beyond:
-    msg = ("%d criterion/criteria require a procedure to be carried out and are "
-           "nonetheless classified at a level rule R1 cannot derive (%s), which "
-           "affects %d contexts. R1 reasons from procedural familiarity and can "
-           "place such a criterion only at Remember, Apply or Create; the "
-           "classification says otherwise, and both are defensible. This is the "
-           "case the rule cannot accommodate and it is reported rather than "
-           "resolved."
-           % (sum(len(v) for v in beyond.values()),
-              "; ".join("%s at %s" % (", ".join(sorted(codes)), lv)
-                        for lv, codes in sorted(beyond.items())),
-              beyond_contexts))
+    described = "; ".join("%s at %s" % (", ".join(sorted(codes)), lv)
+                          for lv, codes in sorted(beyond.items()))
+    how_many = sum(len(v) for v in beyond.values())
+    msg = ("%d of the %d criteria an activity addresses %s a procedure to be "
+           "carried out and %s nonetheless classified at a level rule R1 cannot "
+           "derive (%s), which affects %d contexts. R1 reasons from procedural "
+           "familiarity and can place such a criterion only at Remember, Apply or "
+           "Create; the classification says otherwise, and both are defensible. "
+           "This is the case the rule cannot accommodate and it is reported rather "
+           "than resolved."
+           % (how_many, len(addressed_codes),
+              "requires" if how_many == 1 else "require",
+              "is" if how_many == 1 else "are",
+              described, beyond_contexts))
     say()
     say("   FINDING: %s" % msg)
     report["findings"].append(msg)
-report["levels_overridden_by_r1"] = overridden
+
+if dormant:
+    described = "; ".join("%s at %s" % (", ".join(sorted(codes)), lv)
+                          for lv, codes in sorted(dormant.items()))
+    how_many = sum(len(v) for v in dormant.values())
+    note = ("%d further criteri%s in the same position but %s no activity "
+            "aligned to %s, so %s reaches no context and no design: %s. The same "
+            "question would arise the moment an activity were authored for %s."
+            % (how_many,
+               "on is" if how_many == 1 else "a are",
+               "has" if how_many == 1 else "have",
+               "it" if how_many == 1 else "them",
+               "it" if how_many == 1 else "each",
+               described,
+               "it" if how_many == 1 else "them"))
+    say()
+    say("   note: %s" % note)
+    report["findings"].append(note)
+
+report["criteria_beyond_r1"] = {"addressed": beyond, "unaddressed": dormant}
+report["contexts_beyond_r1"] = beyond_contexts
 
 
 # ============================================================ 7. write SQLite
